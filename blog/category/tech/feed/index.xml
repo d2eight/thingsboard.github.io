@@ -12,14 +12,249 @@
 	<atom:link href="/blog/category/tech/feed/" rel="self" type="application/rss+xml" />
 	<link>/blog/</link>
 	<description></description>
-	<lastBuildDate>Fri, 05 Apr 2024 14:23:36 +0000</lastBuildDate>
+	<lastBuildDate>Tue, 09 Apr 2024 14:14:52 +0000</lastBuildDate>
 	<language>en-US</language>
 	<sy:updatePeriod>
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.4.3</generator>
+	<generator>https://wordpress.org/?v=6.4.4</generator>
 	<item>
+		<title>TBMQ &#8211; Scalable, Fault-tolerant, and Efficient Open-Source MQTT Broker</title>
+		<link>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/</link>
+					<comments>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/#respond</comments>
+		
+		<dc:creator><![CDATA[Dima Landiak]]></dc:creator>
+		<pubDate>Tue, 09 Apr 2024 13:55:08 +0000</pubDate>
+				<category><![CDATA[Tech]]></category>
+		<category><![CDATA[Updates]]></category>
+		<guid isPermaLink="false">/blog/?p=4138</guid>
+
+					<description><![CDATA[TBMQ is an open-source MQTT broker that is designed with great care to implement the following attributes: Motivation&#8230;]]></description>
+										<content:encoded><![CDATA[
+<p>TBMQ is an open-source MQTT broker that is designed with great care to implement the following attributes:</p>
+
+
+
+<ul>
+<li><strong>Scalability</strong>: it is a horizontally scalable platform constructed using cutting-edge open-source technologies;</li>
+
+
+
+<li><strong>Fault tolerance</strong>: no single point of failure; each broker (node) within the cluster is identical in terms of functionality;</li>
+
+
+
+<li><strong>Robustness and efficiency</strong>: can manage millions of clients and process millions of messages per second;</li>
+
+
+
+<li><strong>Durability</strong>: provides high message durability, ensuring that data is never lost.</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img fetchpriority="high" decoding="async" width="1024" height="403" src="/blog/wp-content/uploads/2024/04/tbmq-architecture-1024x403.png" alt="" class="wp-image-4140" srcset="/blog/wp-content/uploads/2024/04/tbmq-architecture-1024x403.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-architecture-300x118.png 300w, /blog/wp-content/uploads/2024/04/tbmq-architecture-768x302.png 768w, /blog/wp-content/uploads/2024/04/tbmq-architecture-1536x605.png 1536w, /blog/wp-content/uploads/2024/04/tbmq-architecture-512x202.png 512w, /blog/wp-content/uploads/2024/04/tbmq-architecture-920x362.png 920w, /blog/wp-content/uploads/2024/04/tbmq-architecture-1600x630.png 1600w, /blog/wp-content/uploads/2024/04/tbmq-architecture.png 1864w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h3 class="wp-block-heading">Motivation</h3>
+
+
+
+<p>At ThingsBoard, we&#8217;ve gained a lot of experience in building scalable IoT applications, which has helped us identify two main scenarios for MQTT-based solutions. In the first scenario, numerous devices generate a large volume of messages that are consumed by specific applications, resulting in a fan-in pattern. Normally, a few applications are set up to handle these lots of incoming data. They must be persistent clients with a Quality of Service (QoS) level set to 1 or 2, capable of retaining all the data even when they&#8217;re temporarily offline due to restarts or upgrades. This ensures applications don&#8217;t miss any single message. On the other hand, the second scenario involves numerous devices subscribing to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data. This case is known as a fan-out pattern. Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for both.</p>
+
+
+
+<p>Our design principles focused on ensuring the broker’s fault tolerance and high availability. Thus, we deliberately avoided reliance on master or coordinated processes. We ensured the same functionality across all nodes within the cluster.</p>
+
+
+
+<p>We prioritized supporting distributed processing, allowing for effortless horizontal scalability as our operations grow. We wanted our broker to support high-throughput and guarantee low-latency delivery of messages to clients. Ensuring data durability and replication was crucial in our design. We aimed for a system where once the broker acknowledges receiving a message, it remains safe and won’t be lost.</p>
+
+
+
+<p>To ensure the fulfillment of the above requirements and prevent message loss in the case of clients or some of the broker instances failures, TBMQ uses the powerful capabilities of&nbsp;<a href="https://kafka.apache.org/">Kafka</a>&nbsp;as its underlying infrastructure.</p>
+
+
+
+<h3 class="wp-block-heading">How does TBMQ work in a nutshell?</h3>
+
+
+
+<p>Kafka plays a crucial role in various stages of the MQTT message processing. All unprocessed published messages, client sessions, and subscriptions are stored within dedicated Kafka topics. A comprehensive list of Kafka topics used within TBMQ is available&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#kafka-topics">here</a>. All broker nodes can readily access the most up-to-date states of client sessions and subscriptions by utilizing these topics. They maintain local copies of sessions and subscriptions for efficient message processing and delivery. When a client loses connection to a specific broker node, other nodes can seamlessly continue operations based on the latest state. Additionally, newly added broker nodes to the cluster get this vital information upon their activation.</p>
+
+
+
+<p>Client subscriptions hold significant importance within the MQTT publish/subscribe pattern. TBMQ employs the&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#subscriptions-trie">Trie</a>&nbsp;data structure to optimize performance, enabling efficient persistence of client subscriptions in memory and facilitating swift access to relevant topic patterns.</p>
+
+
+
+<p>Upon a publisher client sending a&nbsp;<em>PUBLISH</em>&nbsp;message, it is stored in the initial Kafka topic,&nbsp;<strong>tbmq.msg.all</strong>. Once Kafka acknowledges the message’s persistence, the broker promptly responds to the publisher with either a&nbsp;<em>PUBACK</em>/<em>PUBREC</em>&nbsp;message or no response at all, depending on the chosen QoS level.</p>
+
+
+
+<p>Subsequently, separate threads, functioning as Kafka consumers, retrieve messages from the mentioned Kafka topic and utilize the Subscription Trie data structure to identify the intended recipients. Depending on the client type (<strong><em>DEVICE</em></strong>&nbsp;or&nbsp;<strong><em>APPLICATION</em></strong>) and the persistence options described below, the broker either redirects the message to another specific Kafka topic or directly delivers it to the recipient.</p>
+
+
+
+<h4 class="wp-block-heading">Non-persistent client</h4>
+
+
+
+<p>A client is classified as a non-persistent one when the following conditions are met in the&nbsp;<em>CONNECT</em>&nbsp;packet:</p>
+
+
+
+<p>For&nbsp;<strong>MQTT v3.x</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_session</code>&nbsp;flag is set to&nbsp;<em>true</em>.</li>
+</ul>
+
+
+
+<p>For&nbsp;<strong>MQTT v5</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_start</code>&nbsp;flag is set to&nbsp;<em>true</em>&nbsp;and&nbsp;<code>sessionExpiryInterval</code>&nbsp;is set to&nbsp;<em>0</em>&nbsp;or not specified.</li>
+</ul>
+
+
+
+<p>In the case of non-persistent clients, all messages intended for them are published directly without undergoing additional persistence. It is important to note that non-persistent clients can only be of type Device.</p>
+
+
+
+<figure class="wp-block-image size-large is-resized"><img decoding="async" width="1024" height="355" src="/blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-1024x355.png" alt="" class="wp-image-4143" style="width:800px;height:auto" srcset="/blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-1024x355.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-300x104.png 300w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-768x266.png 768w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-512x177.png 512w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-920x319.png 920w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev.png 1190w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">Persistent client</h4>
+
+
+
+<p>MQTT clients that do not meet the non-persistent conditions mentioned above are categorized as persistent clients. Let’s delve into the conditions for persistent clients:</p>
+
+
+
+<p>For&nbsp;<strong>MQTT v3.x</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_session</code>&nbsp;flag is set to&nbsp;<em>false</em>.</li>
+</ul>
+
+
+
+<p>For&nbsp;<strong>MQTT v5 clients</strong>:</p>
+
+
+
+<ul>
+<li><code>sessionExpiryInterval</code>&nbsp;is greater than&nbsp;<em>0</em>&nbsp;(regardless of the&nbsp;<code>clean_start</code>&nbsp;flag).</li>
+
+
+
+<li><code>clean_start</code>&nbsp;flag is set to&nbsp;<em>false</em>&nbsp;and&nbsp;<code>sessionExpiryInterval</code>&nbsp;is set to&nbsp;<em>0</em>&nbsp;or not specified.</li>
+</ul>
+
+
+
+<p>Building on our knowledge within the IoT ecosystem and the successful implementation of numerous IoT use cases, we have classified MQTT clients into two distinct categories:</p>
+
+
+
+<ul>
+<li>The&nbsp;<em>DEVICE</em>&nbsp;clients primarily engaged in publishing a significant volume of messages while subscribing to a limited number of topics with relatively low message rates. These clients are typically associated with IoT devices or sensors that frequently transmit data to the broker.</li>
+
+
+
+<li>The&nbsp;<em>APPLICATION</em>&nbsp;clients specialize in subscribing to topics with high message rates. They often require messages to be persisted when the client is offline with later delivery, ensuring the availability of crucial data. These clients are commonly used for real-time analytics, data processing, or other application-level functionalities.</li>
+</ul>
+
+
+
+<p>Consequently, we made a strategic decision to optimize performance by separating the processing flow for these two types of clients.</p>
+
+
+
+<h5 class="wp-block-heading">Persistent Device client</h5>
+
+
+
+<figure class="wp-block-image size-large is-resized"><img decoding="async" width="1024" height="492" src="/blog/wp-content/uploads/2024/04/tbmq-persistent-dev-1024x492.png" alt="" class="wp-image-4145" style="width:800px;height:auto" srcset="/blog/wp-content/uploads/2024/04/tbmq-persistent-dev-1024x492.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-300x144.png 300w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-768x369.png 768w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-512x246.png 512w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-920x442.png 920w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev.png 1190w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<p>For Device persistent clients, we use the&nbsp;<strong>tbmq.msg.persisted</strong>&nbsp;Kafka topic as a means of processing published messages that are extracted from the&nbsp;<strong>tbmq.msg.all</strong>&nbsp;topic. Dedicated threads, functioning as Kafka consumers, retrieve these messages and store them in a&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#postgresql-database">PostgreSQL</a>&nbsp;database utilized for persistence storage. This approach is particularly suitable for Device clients, as they typically do not require extensive message reception. This approach helps us recover stored messages smoothly when a client reconnects. At the same time, it ensures good performance for scenarios involving a low incoming message rate.</p>
+
+
+
+<p>We expect persistent Device clients to receive no more than 5K messages/second overall due to PostgreSQL limitations. We plan to add support for Redis to optimize persistent storage for Device clients.</p>
+
+
+
+<h5 class="wp-block-heading">Persistent Application client<a href="https://res.cloudinary.com/practicaldev/image/fetch/s--uuBU8T1C--/c_limit%2Cf_auto%2Cfl_progressive%2Cq_auto%2Cw_800/https://dev-to-uploads.s3.amazonaws.com/uploads/articles/0kwq6574pa4c0m1s5ygd.png"></a></h5>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="358" src="/blog/wp-content/uploads/2024/04/tbmq-app-1024x358.png" alt="" class="wp-image-4147" srcset="/blog/wp-content/uploads/2024/04/tbmq-app-1024x358.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-app-300x105.png 300w, /blog/wp-content/uploads/2024/04/tbmq-app-768x269.png 768w, /blog/wp-content/uploads/2024/04/tbmq-app-512x179.png 512w, /blog/wp-content/uploads/2024/04/tbmq-app-920x322.png 920w, /blog/wp-content/uploads/2024/04/tbmq-app.png 1178w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<p>The number of Application clients corresponds to the number of Kafka topics used. The latest version of Kafka can handle millions of topics, making this design suitable even for the largest enterprise use cases.</p>
+
+
+
+<p>Any message read from the&nbsp;<strong>tbmq.msg.all</strong>&nbsp;topic meant for a specific Application client is then stored in the corresponding Kafka topic. A separate thread (Kafka consumer) is assigned to each Application. These threads retrieve messages from the corresponding Kafka topics and deliver them to the respective clients. This approach significantly improves performance by ensuring efficient message delivery. Additionally, the nature of the Kafka consumer group makes the&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/#application-client-type">MQTT 5 shared subscription</a>&nbsp;feature extremely efficient for Application clients.</p>
+
+
+
+<p>Application clients can handle a large volume of received messages, reaching millions per second.</p>
+
+
+
+<h3 class="wp-block-heading">Summary</h3>
+
+
+
+<p>In conclusion, TBMQ&#8217;s design emphasizes meeting the complex demands of IoT communication. It prioritizes scalability, fault tolerance, and efficiency, relying on Kafka for reliable message handling across various scenarios.</p>
+
+
+
+<p>By distinguishing processing strategies for Device and Application clients, TBMQ optimizes message persistence and guarantees consistent and fast message delivery.</p>
+
+
+
+<h3 class="wp-block-heading">Links</h3>
+
+
+
+<ul>
+<li><a href="https://github.com/thingsboard/tbmq">TBMQ GitHub page</a>.</li>
+
+
+
+<li><a href="https://thingsboard.io/docs/mqtt-broker/">TBMQ Website</a>.</li>
+
+
+
+<li><a href="https://thingsboard.io/docs/mqtt-broker/getting-started/">Getting Started guide</a>.</li>
+</ul>
+]]></content:encoded>
+					
+					<wfw:commentRss>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
 		<title>Push notifications to ThingsBoard mobile apps</title>
 		<link>/blog/push-notifications-to-thingsboard-mobile-apps/</link>
 					<comments>/blog/push-notifications-to-thingsboard-mobile-apps/#respond</comments>
@@ -27,7 +262,7 @@
 		<dc:creator><![CDATA[Andrew Shvaika]]></dc:creator>
 		<pubDate>Thu, 14 Mar 2024 15:17:58 +0000</pubDate>
 				<category><![CDATA[Tech]]></category>
-		<guid isPermaLink="false">/blog/?p=3706</guid>
+		<guid isPermaLink="false">https://tbblog.xyz/?p=3706</guid>
 
 					<description><![CDATA[Now, you can receive instant alerts and updates directly on your smartphone, making it easier than ever to&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -59,7 +294,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img fetchpriority="high" decoding="async" width="2409" height="1920" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Sending-Notifications-Manually-1.webp" alt="Thingsboard edit rule settings form with eight fields" class="wp-image-3870" srcset="/blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1.webp 2409w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-300x239.webp 300w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1024x816.webp 1024w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-768x612.webp 768w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1536x1224.webp 1536w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-2048x1632.webp 2048w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-512x408.webp 512w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-920x733.webp 920w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1600x1275.webp 1600w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1920x1530.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1920" src="/blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1.webp" alt="Thingsboard edit rule settings form with eight fields" class="wp-image-3870" srcset="/blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1.webp 2409w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-300x239.webp 300w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1024x816.webp 1024w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-768x612.webp 768w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1536x1224.webp 1536w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-2048x1632.webp 2048w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-512x408.webp 512w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-920x733.webp 920w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1600x1275.webp 1600w, /blog/wp-content/uploads/2024/03/Sending-Notifications-Manually-1-1920x1530.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -67,7 +302,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img decoding="async" width="2409" height="2070" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/new-notification-1.webp" alt="Thingsboard new notification settings form with four fields" class="wp-image-3871" srcset="/blog/wp-content/uploads/2024/03/new-notification-1.webp 2409w, /blog/wp-content/uploads/2024/03/new-notification-1-300x258.webp 300w, /blog/wp-content/uploads/2024/03/new-notification-1-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/new-notification-1-768x660.webp 768w, /blog/wp-content/uploads/2024/03/new-notification-1-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/new-notification-1-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/new-notification-1-512x440.webp 512w, /blog/wp-content/uploads/2024/03/new-notification-1-920x791.webp 920w, /blog/wp-content/uploads/2024/03/new-notification-1-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/new-notification-1-1920x1650.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="2070" src="/blog/wp-content/uploads/2024/03/new-notification-1.webp" alt="Thingsboard new notification settings form with four fields" class="wp-image-3871" srcset="/blog/wp-content/uploads/2024/03/new-notification-1.webp 2409w, /blog/wp-content/uploads/2024/03/new-notification-1-300x258.webp 300w, /blog/wp-content/uploads/2024/03/new-notification-1-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/new-notification-1-768x660.webp 768w, /blog/wp-content/uploads/2024/03/new-notification-1-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/new-notification-1-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/new-notification-1-512x440.webp 512w, /blog/wp-content/uploads/2024/03/new-notification-1-920x791.webp 920w, /blog/wp-content/uploads/2024/03/new-notification-1-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/new-notification-1-1920x1650.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -89,7 +324,7 @@
 
 
 
-<figure class="wp-block-image size-large is-resized"><img decoding="async" width="1024" height="880" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/notification-mobile-2-1024x880.webp" alt="Smartphone with thingsboard notifications on the screen" class="wp-image-3872" style="width:801px;height:auto" srcset="/blog/wp-content/uploads/2024/03/notification-mobile-2-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/notification-mobile-2-300x258.webp 300w, /blog/wp-content/uploads/2024/03/notification-mobile-2-768x660.webp 768w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/notification-mobile-2-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/notification-mobile-2-512x440.webp 512w, /blog/wp-content/uploads/2024/03/notification-mobile-2-920x791.webp 920w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1920x1650.webp 1920w, /blog/wp-content/uploads/2024/03/notification-mobile-2.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large is-resized"><img loading="lazy" decoding="async" width="1024" height="880" src="/blog/wp-content/uploads/2024/03/notification-mobile-2-1024x880.webp" alt="Smartphone with thingsboard notifications on the screen" class="wp-image-3872" style="width:801px;height:auto" srcset="/blog/wp-content/uploads/2024/03/notification-mobile-2-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/notification-mobile-2-300x258.webp 300w, /blog/wp-content/uploads/2024/03/notification-mobile-2-768x660.webp 768w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/notification-mobile-2-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/notification-mobile-2-512x440.webp 512w, /blog/wp-content/uploads/2024/03/notification-mobile-2-920x791.webp 920w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/notification-mobile-2-1920x1650.webp 1920w, /blog/wp-content/uploads/2024/03/notification-mobile-2.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -101,7 +336,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="2466" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Edit-rule-1.webp" alt="Thingsboard edit rule settings form with six fields" class="wp-image-3873" srcset="/blog/wp-content/uploads/2024/03/Edit-rule-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-rule-1-293x300.webp 293w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1000x1024.webp 1000w, /blog/wp-content/uploads/2024/03/Edit-rule-1-768x786.webp 768w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1500x1536.webp 1500w, /blog/wp-content/uploads/2024/03/Edit-rule-1-2001x2048.webp 2001w, /blog/wp-content/uploads/2024/03/Edit-rule-1-512x524.webp 512w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1024x1048.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-rule-1-920x942.webp 920w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1600x1638.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1920x1965.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="2466" src="/blog/wp-content/uploads/2024/03/Edit-rule-1.webp" alt="Thingsboard edit rule settings form with six fields" class="wp-image-3873" srcset="/blog/wp-content/uploads/2024/03/Edit-rule-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-rule-1-293x300.webp 293w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1000x1024.webp 1000w, /blog/wp-content/uploads/2024/03/Edit-rule-1-768x786.webp 768w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1500x1536.webp 1500w, /blog/wp-content/uploads/2024/03/Edit-rule-1-2001x2048.webp 2001w, /blog/wp-content/uploads/2024/03/Edit-rule-1-512x524.webp 512w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1024x1048.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-rule-1-920x942.webp 920w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1600x1638.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-rule-1-1920x1965.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -109,7 +344,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1977" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Edit-notification-template-01-1.webp" alt="Thingsboard edit notification template settings form with eight fields" class="wp-image-3874" srcset="/blog/wp-content/uploads/2024/03/Edit-notification-template-01-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-300x246.webp 300w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1024x840.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-768x630.webp 768w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1536x1261.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-2048x1681.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-512x420.webp 512w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-920x755.webp 920w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1600x1313.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1920x1576.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1977" src="/blog/wp-content/uploads/2024/03/Edit-notification-template-01-1.webp" alt="Thingsboard edit notification template settings form with eight fields" class="wp-image-3874" srcset="/blog/wp-content/uploads/2024/03/Edit-notification-template-01-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-300x246.webp 300w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1024x840.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-768x630.webp 768w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1536x1261.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-2048x1681.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-512x420.webp 512w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-920x755.webp 920w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1600x1313.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-notification-template-01-1-1920x1576.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -117,7 +352,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="2040" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Edit-notification-template-02-1.webp" alt="Thingsboard edit notification template settings form with four fields" class="wp-image-3875" srcset="/blog/wp-content/uploads/2024/03/Edit-notification-template-02-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-300x254.webp 300w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1024x867.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-768x650.webp 768w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1536x1301.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-2048x1734.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-512x434.webp 512w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-920x779.webp 920w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1600x1355.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1920x1626.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="2040" src="/blog/wp-content/uploads/2024/03/Edit-notification-template-02-1.webp" alt="Thingsboard edit notification template settings form with four fields" class="wp-image-3875" srcset="/blog/wp-content/uploads/2024/03/Edit-notification-template-02-1.webp 2409w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-300x254.webp 300w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1024x867.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-768x650.webp 768w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1536x1301.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-2048x1734.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-512x434.webp 512w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-920x779.webp 920w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1600x1355.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-notification-template-02-1-1920x1626.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -125,7 +360,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="880" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Notifications-03-1-1024x880.webp" alt="Smartphone with thingsboard alarm notifications on the screen" class="wp-image-3876" srcset="/blog/wp-content/uploads/2024/03/Notifications-03-1-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/Notifications-03-1-300x258.webp 300w, /blog/wp-content/uploads/2024/03/Notifications-03-1-768x660.webp 768w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/Notifications-03-1-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/Notifications-03-1-512x440.webp 512w, /blog/wp-content/uploads/2024/03/Notifications-03-1-920x791.webp 920w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1920x1650.webp 1920w, /blog/wp-content/uploads/2024/03/Notifications-03-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="880" src="/blog/wp-content/uploads/2024/03/Notifications-03-1-1024x880.webp" alt="Smartphone with thingsboard alarm notifications on the screen" class="wp-image-3876" srcset="/blog/wp-content/uploads/2024/03/Notifications-03-1-1024x880.webp 1024w, /blog/wp-content/uploads/2024/03/Notifications-03-1-300x258.webp 300w, /blog/wp-content/uploads/2024/03/Notifications-03-1-768x660.webp 768w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1536x1320.webp 1536w, /blog/wp-content/uploads/2024/03/Notifications-03-1-2048x1760.webp 2048w, /blog/wp-content/uploads/2024/03/Notifications-03-1-512x440.webp 512w, /blog/wp-content/uploads/2024/03/Notifications-03-1-920x791.webp 920w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1600x1375.webp 1600w, /blog/wp-content/uploads/2024/03/Notifications-03-1-1920x1650.webp 1920w, /blog/wp-content/uploads/2024/03/Notifications-03-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -153,7 +388,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="902" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Notifications-04-1-1024x902.webp" alt="Two smartphones with thingsboard alarm notifications on the screens" class="wp-image-3877" srcset="/blog/wp-content/uploads/2024/03/Notifications-04-1-1024x902.webp 1024w, /blog/wp-content/uploads/2024/03/Notifications-04-1-300x264.webp 300w, /blog/wp-content/uploads/2024/03/Notifications-04-1-768x676.webp 768w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1536x1352.webp 1536w, /blog/wp-content/uploads/2024/03/Notifications-04-1-2048x1803.webp 2048w, /blog/wp-content/uploads/2024/03/Notifications-04-1-512x451.webp 512w, /blog/wp-content/uploads/2024/03/Notifications-04-1-920x810.webp 920w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1600x1409.webp 1600w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1920x1690.webp 1920w, /blog/wp-content/uploads/2024/03/Notifications-04-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="902" src="/blog/wp-content/uploads/2024/03/Notifications-04-1-1024x902.webp" alt="Two smartphones with thingsboard alarm notifications on the screens" class="wp-image-3877" srcset="/blog/wp-content/uploads/2024/03/Notifications-04-1-1024x902.webp 1024w, /blog/wp-content/uploads/2024/03/Notifications-04-1-300x264.webp 300w, /blog/wp-content/uploads/2024/03/Notifications-04-1-768x676.webp 768w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1536x1352.webp 1536w, /blog/wp-content/uploads/2024/03/Notifications-04-1-2048x1803.webp 2048w, /blog/wp-content/uploads/2024/03/Notifications-04-1-512x451.webp 512w, /blog/wp-content/uploads/2024/03/Notifications-04-1-920x810.webp 920w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1600x1409.webp 1600w, /blog/wp-content/uploads/2024/03/Notifications-04-1-1920x1690.webp 1920w, /blog/wp-content/uploads/2024/03/Notifications-04-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -181,7 +416,7 @@
 		<dc:creator><![CDATA[Andrew Shvaika]]></dc:creator>
 		<pubDate>Tue, 12 Mar 2024 16:38:09 +0000</pubDate>
 				<category><![CDATA[Tech]]></category>
-		<guid isPermaLink="false">/blog/?p=3649</guid>
+		<guid isPermaLink="false">https://tbblog.xyz/?p=3649</guid>
 
 					<description><![CDATA[Since launching, our time-series charts have grown a lot but have become harder to configure due to many&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -197,7 +432,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="766" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Time-series-chart-family-5-1024x766.webp" alt="Four charts with statistics and legend" class="wp-image-3725" srcset="/blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1024x766.webp 1024w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-300x225.webp 300w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-768x575.webp 768w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1536x1150.webp 1536w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-2048x1533.webp 2048w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-512x383.webp 512w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-920x689.webp 920w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1600x1198.webp 1600w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1920x1437.webp 1920w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="766" src="/blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1024x766.webp" alt="Four charts with statistics and legend" class="wp-image-3725" srcset="/blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1024x766.webp 1024w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-300x225.webp 300w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-768x575.webp 768w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1536x1150.webp 1536w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-2048x1533.webp 2048w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-512x383.webp 512w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-920x689.webp 920w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1600x1198.webp 1600w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5-1920x1437.webp 1920w, /blog/wp-content/uploads/2024/03/Time-series-chart-family-5.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -209,7 +444,7 @@
 
 
 
-<figure class="wp-block-image size-large is-resized"><img loading="lazy" decoding="async" width="1024" height="412" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Time-window-and-data-source-2-1024x412.webp" alt="Thingsboard time window and data source configurations" class="wp-image-3749" style="width:798px;height:auto" srcset="/blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1024x412.webp 1024w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-300x121.webp 300w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-768x309.webp 768w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1536x618.webp 1536w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-2048x824.webp 2048w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-512x206.webp 512w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-920x370.webp 920w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1600x644.webp 1600w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1920x772.webp 1920w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large is-resized"><img loading="lazy" decoding="async" width="1024" height="412" src="/blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1024x412.webp" alt="Thingsboard time window and data source configurations" class="wp-image-3749" style="width:798px;height:auto" srcset="/blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1024x412.webp 1024w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-300x121.webp 300w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-768x309.webp 768w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1536x618.webp 1536w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-2048x824.webp 2048w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-512x206.webp 512w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-920x370.webp 920w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1600x644.webp 1600w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2-1920x772.webp 1920w, /blog/wp-content/uploads/2024/03/Time-window-and-data-source-2.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -221,7 +456,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="404" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Y-axes_1-1024x404.webp" alt="Thingsboard Y-axes setup with default configuration" class="wp-image-3728" srcset="/blog/wp-content/uploads/2024/03/Y-axes_1-1024x404.webp 1024w, /blog/wp-content/uploads/2024/03/Y-axes_1-300x118.webp 300w, /blog/wp-content/uploads/2024/03/Y-axes_1-768x303.webp 768w, /blog/wp-content/uploads/2024/03/Y-axes_1-1536x606.webp 1536w, /blog/wp-content/uploads/2024/03/Y-axes_1-2048x808.webp 2048w, /blog/wp-content/uploads/2024/03/Y-axes_1-512x202.webp 512w, /blog/wp-content/uploads/2024/03/Y-axes_1-920x363.webp 920w, /blog/wp-content/uploads/2024/03/Y-axes_1-1600x632.webp 1600w, /blog/wp-content/uploads/2024/03/Y-axes_1-1920x758.webp 1920w, /blog/wp-content/uploads/2024/03/Y-axes_1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="404" src="/blog/wp-content/uploads/2024/03/Y-axes_1-1024x404.webp" alt="Thingsboard Y-axes setup with default configuration" class="wp-image-3728" srcset="/blog/wp-content/uploads/2024/03/Y-axes_1-1024x404.webp 1024w, /blog/wp-content/uploads/2024/03/Y-axes_1-300x118.webp 300w, /blog/wp-content/uploads/2024/03/Y-axes_1-768x303.webp 768w, /blog/wp-content/uploads/2024/03/Y-axes_1-1536x606.webp 1536w, /blog/wp-content/uploads/2024/03/Y-axes_1-2048x808.webp 2048w, /blog/wp-content/uploads/2024/03/Y-axes_1-512x202.webp 512w, /blog/wp-content/uploads/2024/03/Y-axes_1-920x363.webp 920w, /blog/wp-content/uploads/2024/03/Y-axes_1-1600x632.webp 1600w, /blog/wp-content/uploads/2024/03/Y-axes_1-1920x758.webp 1920w, /blog/wp-content/uploads/2024/03/Y-axes_1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -271,7 +506,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="409" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Series-1024x409.webp" alt="Thingsboard series table with default config" class="wp-image-3729" srcset="/blog/wp-content/uploads/2024/03/Series-1024x409.webp 1024w, /blog/wp-content/uploads/2024/03/Series-300x120.webp 300w, /blog/wp-content/uploads/2024/03/Series-768x307.webp 768w, /blog/wp-content/uploads/2024/03/Series-1536x614.webp 1536w, /blog/wp-content/uploads/2024/03/Series-2048x819.webp 2048w, /blog/wp-content/uploads/2024/03/Series-512x205.webp 512w, /blog/wp-content/uploads/2024/03/Series-920x368.webp 920w, /blog/wp-content/uploads/2024/03/Series-1600x640.webp 1600w, /blog/wp-content/uploads/2024/03/Series-1920x768.webp 1920w, /blog/wp-content/uploads/2024/03/Series.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="409" src="/blog/wp-content/uploads/2024/03/Series-1024x409.webp" alt="Thingsboard series table with default config" class="wp-image-3729" srcset="/blog/wp-content/uploads/2024/03/Series-1024x409.webp 1024w, /blog/wp-content/uploads/2024/03/Series-300x120.webp 300w, /blog/wp-content/uploads/2024/03/Series-768x307.webp 768w, /blog/wp-content/uploads/2024/03/Series-1536x614.webp 1536w, /blog/wp-content/uploads/2024/03/Series-2048x819.webp 2048w, /blog/wp-content/uploads/2024/03/Series-512x205.webp 512w, /blog/wp-content/uploads/2024/03/Series-920x368.webp 920w, /blog/wp-content/uploads/2024/03/Series-1600x640.webp 1600w, /blog/wp-content/uploads/2024/03/Series-1920x768.webp 1920w, /blog/wp-content/uploads/2024/03/Series.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -331,7 +566,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="437" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Thresholds-1-1024x437.webp" alt="Thingsboard thresholds default settings with three options to configure" class="wp-image-3731" srcset="/blog/wp-content/uploads/2024/03/Thresholds-1-1024x437.webp 1024w, /blog/wp-content/uploads/2024/03/Thresholds-1-300x128.webp 300w, /blog/wp-content/uploads/2024/03/Thresholds-1-768x328.webp 768w, /blog/wp-content/uploads/2024/03/Thresholds-1-1536x656.webp 1536w, /blog/wp-content/uploads/2024/03/Thresholds-1-2048x875.webp 2048w, /blog/wp-content/uploads/2024/03/Thresholds-1-512x219.webp 512w, /blog/wp-content/uploads/2024/03/Thresholds-1-920x393.webp 920w, /blog/wp-content/uploads/2024/03/Thresholds-1-1600x683.webp 1600w, /blog/wp-content/uploads/2024/03/Thresholds-1-1920x820.webp 1920w, /blog/wp-content/uploads/2024/03/Thresholds-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="437" src="/blog/wp-content/uploads/2024/03/Thresholds-1-1024x437.webp" alt="Thingsboard thresholds default settings with three options to configure" class="wp-image-3731" srcset="/blog/wp-content/uploads/2024/03/Thresholds-1-1024x437.webp 1024w, /blog/wp-content/uploads/2024/03/Thresholds-1-300x128.webp 300w, /blog/wp-content/uploads/2024/03/Thresholds-1-768x328.webp 768w, /blog/wp-content/uploads/2024/03/Thresholds-1-1536x656.webp 1536w, /blog/wp-content/uploads/2024/03/Thresholds-1-2048x875.webp 2048w, /blog/wp-content/uploads/2024/03/Thresholds-1-512x219.webp 512w, /blog/wp-content/uploads/2024/03/Thresholds-1-920x393.webp 920w, /blog/wp-content/uploads/2024/03/Thresholds-1-1600x683.webp 1600w, /blog/wp-content/uploads/2024/03/Thresholds-1-1920x820.webp 1920w, /blog/wp-content/uploads/2024/03/Thresholds-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -343,7 +578,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="418" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/data-zoom-1-1024x418.webp" alt="Long chart with three lines and data zoom option" class="wp-image-3824" srcset="/blog/wp-content/uploads/2024/03/data-zoom-1-1024x418.webp 1024w, /blog/wp-content/uploads/2024/03/data-zoom-1-300x123.webp 300w, /blog/wp-content/uploads/2024/03/data-zoom-1-768x314.webp 768w, /blog/wp-content/uploads/2024/03/data-zoom-1-1536x627.webp 1536w, /blog/wp-content/uploads/2024/03/data-zoom-1-2048x837.webp 2048w, /blog/wp-content/uploads/2024/03/data-zoom-1-512x209.webp 512w, /blog/wp-content/uploads/2024/03/data-zoom-1-920x376.webp 920w, /blog/wp-content/uploads/2024/03/data-zoom-1-1600x654.webp 1600w, /blog/wp-content/uploads/2024/03/data-zoom-1-1920x784.webp 1920w, /blog/wp-content/uploads/2024/03/data-zoom-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="418" src="/blog/wp-content/uploads/2024/03/data-zoom-1-1024x418.webp" alt="Long chart with three lines and data zoom option" class="wp-image-3824" srcset="/blog/wp-content/uploads/2024/03/data-zoom-1-1024x418.webp 1024w, /blog/wp-content/uploads/2024/03/data-zoom-1-300x123.webp 300w, /blog/wp-content/uploads/2024/03/data-zoom-1-768x314.webp 768w, /blog/wp-content/uploads/2024/03/data-zoom-1-1536x627.webp 1536w, /blog/wp-content/uploads/2024/03/data-zoom-1-2048x837.webp 2048w, /blog/wp-content/uploads/2024/03/data-zoom-1-512x209.webp 512w, /blog/wp-content/uploads/2024/03/data-zoom-1-920x376.webp 920w, /blog/wp-content/uploads/2024/03/data-zoom-1-1600x654.webp 1600w, /blog/wp-content/uploads/2024/03/data-zoom-1-1920x784.webp 1920w, /blog/wp-content/uploads/2024/03/data-zoom-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -355,7 +590,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="634" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Tooltip-improvement_1-1024x634.webp" alt="Chart which is showing bars and lines 
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="634" src="/blog/wp-content/uploads/2024/03/Tooltip-improvement_1-1024x634.webp" alt="Chart which is showing bars and lines 
 at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03/Tooltip-improvement_1-1024x634.webp 1024w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-300x186.webp 300w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-768x475.webp 768w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-1536x951.webp 1536w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-2048x1268.webp 2048w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-512x317.webp 512w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-920x569.webp 920w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-1600x990.webp 1600w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1-1920x1188.webp 1920w, /blog/wp-content/uploads/2024/03/Tooltip-improvement_1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
@@ -376,7 +611,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1812" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Bar-chart-with-labels.webp" alt="Thingsboard bar chart with labels" class="wp-image-3734" srcset="/blog/wp-content/uploads/2024/03/Bar-chart-with-labels.webp 2409w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-300x226.webp 300w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1024x770.webp 1024w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-768x578.webp 768w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1536x1155.webp 1536w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-2048x1540.webp 2048w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-512x385.webp 512w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-920x692.webp 920w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1600x1203.webp 1600w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1920x1444.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1812" src="/blog/wp-content/uploads/2024/03/Bar-chart-with-labels.webp" alt="Thingsboard bar chart with labels" class="wp-image-3734" srcset="/blog/wp-content/uploads/2024/03/Bar-chart-with-labels.webp 2409w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-300x226.webp 300w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1024x770.webp 1024w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-768x578.webp 768w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1536x1155.webp 1536w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-2048x1540.webp 2048w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-512x385.webp 512w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-920x692.webp 920w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1600x1203.webp 1600w, /blog/wp-content/uploads/2024/03/Bar-chart-with-labels-1920x1444.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -388,7 +623,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="770" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Range-chart-1024x770.webp" alt="Thingsboard range chart which is showing temperature on a time period " class="wp-image-3735" srcset="/blog/wp-content/uploads/2024/03/Range-chart-1024x770.webp 1024w, /blog/wp-content/uploads/2024/03/Range-chart-300x226.webp 300w, /blog/wp-content/uploads/2024/03/Range-chart-768x578.webp 768w, /blog/wp-content/uploads/2024/03/Range-chart-1536x1155.webp 1536w, /blog/wp-content/uploads/2024/03/Range-chart-2048x1540.webp 2048w, /blog/wp-content/uploads/2024/03/Range-chart-512x385.webp 512w, /blog/wp-content/uploads/2024/03/Range-chart-920x692.webp 920w, /blog/wp-content/uploads/2024/03/Range-chart-1600x1203.webp 1600w, /blog/wp-content/uploads/2024/03/Range-chart-1920x1444.webp 1920w, /blog/wp-content/uploads/2024/03/Range-chart.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="770" src="/blog/wp-content/uploads/2024/03/Range-chart-1024x770.webp" alt="Thingsboard range chart which is showing temperature on a time period " class="wp-image-3735" srcset="/blog/wp-content/uploads/2024/03/Range-chart-1024x770.webp 1024w, /blog/wp-content/uploads/2024/03/Range-chart-300x226.webp 300w, /blog/wp-content/uploads/2024/03/Range-chart-768x578.webp 768w, /blog/wp-content/uploads/2024/03/Range-chart-1536x1155.webp 1536w, /blog/wp-content/uploads/2024/03/Range-chart-2048x1540.webp 2048w, /blog/wp-content/uploads/2024/03/Range-chart-512x385.webp 512w, /blog/wp-content/uploads/2024/03/Range-chart-920x692.webp 920w, /blog/wp-content/uploads/2024/03/Range-chart-1600x1203.webp 1600w, /blog/wp-content/uploads/2024/03/Range-chart-1920x1444.webp 1920w, /blog/wp-content/uploads/2024/03/Range-chart.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -416,7 +651,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 		<dc:creator><![CDATA[Andrew Shvaika]]></dc:creator>
 		<pubDate>Tue, 05 Mar 2024 11:54:34 +0000</pubDate>
 				<category><![CDATA[Tech]]></category>
-		<guid isPermaLink="false">http://wp.thingsboard.io/?p=2970</guid>
+		<guid isPermaLink="false">/blog/?p=2970</guid>
 
 					<description><![CDATA[Welcome to the latest update from the ThingsBoard team! Our ongoing mission to improve the platform&#8217;s functionality and&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -432,7 +667,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="441" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Buttons.webp" alt="Tree buttons with different clicking states " class="wp-image-3716" srcset="/blog/wp-content/uploads/2024/03/Buttons.webp 2406w, /blog/wp-content/uploads/2024/03/Buttons-300x55.webp 300w, /blog/wp-content/uploads/2024/03/Buttons-1024x188.webp 1024w, /blog/wp-content/uploads/2024/03/Buttons-768x141.webp 768w, /blog/wp-content/uploads/2024/03/Buttons-1536x282.webp 1536w, /blog/wp-content/uploads/2024/03/Buttons-2048x375.webp 2048w, /blog/wp-content/uploads/2024/03/Buttons-512x94.webp 512w, /blog/wp-content/uploads/2024/03/Buttons-920x169.webp 920w, /blog/wp-content/uploads/2024/03/Buttons-1600x293.webp 1600w, /blog/wp-content/uploads/2024/03/Buttons-1920x352.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="441" src="/blog/wp-content/uploads/2024/03/Buttons.webp" alt="Tree buttons with different clicking states " class="wp-image-3716" srcset="/blog/wp-content/uploads/2024/03/Buttons.webp 2406w, /blog/wp-content/uploads/2024/03/Buttons-300x55.webp 300w, /blog/wp-content/uploads/2024/03/Buttons-1024x188.webp 1024w, /blog/wp-content/uploads/2024/03/Buttons-768x141.webp 768w, /blog/wp-content/uploads/2024/03/Buttons-1536x282.webp 1536w, /blog/wp-content/uploads/2024/03/Buttons-2048x375.webp 2048w, /blog/wp-content/uploads/2024/03/Buttons-512x94.webp 512w, /blog/wp-content/uploads/2024/03/Buttons-920x169.webp 920w, /blog/wp-content/uploads/2024/03/Buttons-1600x293.webp 1600w, /blog/wp-content/uploads/2024/03/Buttons-1920x352.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
 
 
 
@@ -450,7 +685,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1353" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Add-widget-2.webp" alt="Thingsboard basic widget settings" class="wp-image-3718" srcset="/blog/wp-content/uploads/2024/03/Add-widget-2.webp 2409w, /blog/wp-content/uploads/2024/03/Add-widget-2-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Add-widget-2-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Add-widget-2-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Add-widget-2-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Add-widget-2-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Add-widget-2-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Add-widget-2-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Add-widget-2-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Add-widget-2-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1353" src="/blog/wp-content/uploads/2024/03/Add-widget-2.webp" alt="Thingsboard basic widget settings" class="wp-image-3718" srcset="/blog/wp-content/uploads/2024/03/Add-widget-2.webp 2409w, /blog/wp-content/uploads/2024/03/Add-widget-2-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Add-widget-2-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Add-widget-2-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Add-widget-2-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Add-widget-2-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Add-widget-2-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Add-widget-2-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Add-widget-2-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Add-widget-2-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -458,7 +693,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1626" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Appearance-3-1.webp" alt="" class="wp-image-3899" srcset="/blog/wp-content/uploads/2024/03/Appearance-3-1.webp 2409w, /blog/wp-content/uploads/2024/03/Appearance-3-1-300x202.webp 300w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1024x691.webp 1024w, /blog/wp-content/uploads/2024/03/Appearance-3-1-768x518.webp 768w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1536x1037.webp 1536w, /blog/wp-content/uploads/2024/03/Appearance-3-1-2048x1382.webp 2048w, /blog/wp-content/uploads/2024/03/Appearance-3-1-512x346.webp 512w, /blog/wp-content/uploads/2024/03/Appearance-3-1-920x621.webp 920w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1600x1080.webp 1600w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1920x1296.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1626" src="/blog/wp-content/uploads/2024/03/Appearance-3-1.webp" alt="" class="wp-image-3899" srcset="/blog/wp-content/uploads/2024/03/Appearance-3-1.webp 2409w, /blog/wp-content/uploads/2024/03/Appearance-3-1-300x202.webp 300w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1024x691.webp 1024w, /blog/wp-content/uploads/2024/03/Appearance-3-1-768x518.webp 768w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1536x1037.webp 1536w, /blog/wp-content/uploads/2024/03/Appearance-3-1-2048x1382.webp 2048w, /blog/wp-content/uploads/2024/03/Appearance-3-1-512x346.webp 512w, /blog/wp-content/uploads/2024/03/Appearance-3-1-920x621.webp 920w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1600x1080.webp 1600w, /blog/wp-content/uploads/2024/03/Appearance-3-1-1920x1296.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -466,7 +701,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1353" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Button-use-cases.webp" alt="Thingsboard dashboard with five blocks which are demonstrating widget actions capabilities " class="wp-image-3722" srcset="/blog/wp-content/uploads/2024/03/Button-use-cases.webp 2409w, /blog/wp-content/uploads/2024/03/Button-use-cases-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Button-use-cases-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Button-use-cases-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Button-use-cases-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Button-use-cases-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Button-use-cases-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Button-use-cases-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Button-use-cases-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Button-use-cases-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1353" src="/blog/wp-content/uploads/2024/03/Button-use-cases.webp" alt="Thingsboard dashboard with five blocks which are demonstrating widget actions capabilities " class="wp-image-3722" srcset="/blog/wp-content/uploads/2024/03/Button-use-cases.webp 2409w, /blog/wp-content/uploads/2024/03/Button-use-cases-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Button-use-cases-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Button-use-cases-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Button-use-cases-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Button-use-cases-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Button-use-cases-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Button-use-cases-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Button-use-cases-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Button-use-cases-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -487,7 +722,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 <figure class="wp-block-gallery has-nested-images columns-default is-cropped wp-block-gallery-6 is-layout-flex wp-block-gallery-is-layout-flex">
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" data-id="3566" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Open_dialog-2.gif" alt="Opening dialog which shows chart" class="wp-image-3566"/></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" data-id="3566" src="/blog/wp-content/uploads/2024/03/Open_dialog-2.gif" alt="Opening dialog which shows chart" class="wp-image-3566"/></figure>
 </figure>
 
 
@@ -496,7 +731,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full is-resized"><img loading="lazy" decoding="async" width="720" height="372" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Open_pop-up-1.gif" alt="Opening popup which shows chart" class="wp-image-3567" style="width:802px;height:auto"/></figure>
+<figure class="wp-block-image size-full is-resized"><img loading="lazy" decoding="async" width="720" height="372" src="/blog/wp-content/uploads/2024/03/Open_pop-up-1.gif" alt="Opening popup which shows chart" class="wp-image-3567" style="width:802px;height:auto"/></figure>
 
 
 
@@ -504,7 +739,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Change_state.gif" alt="Opening another dashboard state after clicking on the button" class="wp-image-3570"/></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="/blog/wp-content/uploads/2024/03/Change_state.gif" alt="Opening another dashboard state after clicking on the button" class="wp-image-3570"/></figure>
 
 
 
@@ -512,7 +747,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Drill_down.gif" alt="Opening another dashboard state with leaving the old one in the stack after clicking on the button " class="wp-image-3571"/></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="/blog/wp-content/uploads/2024/03/Drill_down.gif" alt="Opening another dashboard state with leaving the old one in the stack after clicking on the button " class="wp-image-3571"/></figure>
 
 
 
@@ -520,7 +755,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Open_url.gif" alt="Opening google after clicking on the button" class="wp-image-3572"/></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="722" height="372" src="/blog/wp-content/uploads/2024/03/Open_url.gif" alt="Opening google after clicking on the button" class="wp-image-3572"/></figure>
 
 
 
@@ -544,7 +779,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 <div class="wp-block-image">
-<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1542" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Execute-RPC-action-7.webp" alt="Form with three fields and apply button" class="wp-image-3736" srcset="/blog/wp-content/uploads/2024/03/Execute-RPC-action-7.webp 2409w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-300x192.webp 300w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1024x655.webp 1024w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-768x492.webp 768w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1536x983.webp 1536w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-2048x1311.webp 2048w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-512x328.webp 512w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-920x589.webp 920w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1600x1024.webp 1600w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1920x1229.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
+<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1542" src="/blog/wp-content/uploads/2024/03/Execute-RPC-action-7.webp" alt="Form with three fields and apply button" class="wp-image-3736" srcset="/blog/wp-content/uploads/2024/03/Execute-RPC-action-7.webp 2409w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-300x192.webp 300w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1024x655.webp 1024w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-768x492.webp 768w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1536x983.webp 1536w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-2048x1311.webp 2048w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-512x328.webp 512w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-920x589.webp 920w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1600x1024.webp 1600w, /blog/wp-content/uploads/2024/03/Execute-RPC-action-7-1920x1229.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
 
 
 <p style="font-size:16px">By default, we use an un-persisted command with 5 seconds timeout. You may change the command parameters in the advanced settings of the action.</p>
@@ -555,21 +790,21 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 <div class="wp-block-image">
-<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1638" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Set-attribute-action-8.webp" alt="Form with four fields and apply button" class="wp-image-3738" srcset="/blog/wp-content/uploads/2024/03/Set-attribute-action-8.webp 2409w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-300x204.webp 300w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1024x696.webp 1024w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-768x522.webp 768w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1536x1044.webp 1536w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-2048x1393.webp 2048w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-512x348.webp 512w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-920x626.webp 920w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1600x1088.webp 1600w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1920x1306.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
+<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1638" src="/blog/wp-content/uploads/2024/03/Set-attribute-action-8.webp" alt="Form with four fields and apply button" class="wp-image-3738" srcset="/blog/wp-content/uploads/2024/03/Set-attribute-action-8.webp 2409w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-300x204.webp 300w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1024x696.webp 1024w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-768x522.webp 768w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1536x1044.webp 1536w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-2048x1393.webp 2048w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-512x348.webp 512w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-920x626.webp 920w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1600x1088.webp 1600w, /blog/wp-content/uploads/2024/03/Set-attribute-action-8-1920x1306.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
 
 
 <p style="font-size:16px"><strong>Add time-series action</strong> allows you to add the new time-series value for the particular entity. The action configuration form allows you to configure the time-series data key and value. The value may be configured as a constant or result of function execution. </p>
 
 
 <div class="wp-block-image">
-<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1434" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Add-time-series-action-9.webp" alt="Form with three fields and apply button" class="wp-image-3741" srcset="/blog/wp-content/uploads/2024/03/Add-time-series-action-9.webp 2409w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-300x179.webp 300w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1024x610.webp 1024w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-768x457.webp 768w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1536x914.webp 1536w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-2048x1219.webp 2048w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-512x305.webp 512w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-920x548.webp 920w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1600x952.webp 1600w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1920x1143.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
+<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="2409" height="1434" src="/blog/wp-content/uploads/2024/03/Add-time-series-action-9.webp" alt="Form with three fields and apply button" class="wp-image-3741" srcset="/blog/wp-content/uploads/2024/03/Add-time-series-action-9.webp 2409w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-300x179.webp 300w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1024x610.webp 1024w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-768x457.webp 768w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1536x914.webp 1536w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-2048x1219.webp 2048w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-512x305.webp 512w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-920x548.webp 920w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1600x952.webp 1600w, /blog/wp-content/uploads/2024/03/Add-time-series-action-9-1920x1143.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
 
 
 <p style="font-size:16px">You may dynamically disable the button based on certain values of the attribute or time-series key. For example, the dashboard attached below contains two buttons that switch the state of the user&#8217;s attribute &#8220;state&#8221;. When the user presses button A, it becomes disabled, and vice versa.</p>
 
 
 <div class="wp-block-image">
-<figure class="aligncenter size-full is-resized"><img loading="lazy" decoding="async" width="2409" height="1353" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Disabled-state-10.webp" alt="Thingsboard dashboard with two buttons which are change dashboard states" class="wp-image-3744" style="width:822px;height:auto" srcset="/blog/wp-content/uploads/2024/03/Disabled-state-10.webp 2409w, /blog/wp-content/uploads/2024/03/Disabled-state-10-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Disabled-state-10-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Disabled-state-10-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Disabled-state-10-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Disabled-state-10-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
+<figure class="aligncenter size-full is-resized"><img loading="lazy" decoding="async" width="2409" height="1353" src="/blog/wp-content/uploads/2024/03/Disabled-state-10.webp" alt="Thingsboard dashboard with two buttons which are change dashboard states" class="wp-image-3744" style="width:822px;height:auto" srcset="/blog/wp-content/uploads/2024/03/Disabled-state-10.webp 2409w, /blog/wp-content/uploads/2024/03/Disabled-state-10-300x168.webp 300w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1024x575.webp 1024w, /blog/wp-content/uploads/2024/03/Disabled-state-10-768x431.webp 768w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1536x863.webp 1536w, /blog/wp-content/uploads/2024/03/Disabled-state-10-2048x1150.webp 2048w, /blog/wp-content/uploads/2024/03/Disabled-state-10-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Disabled-state-10-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1600x899.webp 1600w, /blog/wp-content/uploads/2024/03/Disabled-state-10-1920x1078.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure></div>
 
 
 <p style="font-size:16px">You may find the sample dashboard JSON below: </p>
@@ -596,7 +831,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="744" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Toggle-button-widget.webp" alt="Two blocks with opened and locked locks icons" class="wp-image-3752" srcset="/blog/wp-content/uploads/2024/03/Toggle-button-widget.webp 2406w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-300x93.webp 300w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1024x317.webp 1024w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-768x237.webp 768w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1536x475.webp 1536w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-2048x633.webp 2048w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-512x158.webp 512w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-920x284.webp 920w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1600x495.webp 1600w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1920x594.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="744" src="/blog/wp-content/uploads/2024/03/Toggle-button-widget.webp" alt="Two blocks with opened and locked locks icons" class="wp-image-3752" srcset="/blog/wp-content/uploads/2024/03/Toggle-button-widget.webp 2406w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-300x93.webp 300w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1024x317.webp 1024w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-768x237.webp 768w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1536x475.webp 1536w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-2048x633.webp 2048w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-512x158.webp 512w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-920x284.webp 920w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1600x495.webp 1600w, /blog/wp-content/uploads/2024/03/Toggle-button-widget-1920x594.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
 
 
 
@@ -604,7 +839,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1236" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Behavior.webp" alt="Thingsboard form with four fields" class="wp-image-3754" srcset="/blog/wp-content/uploads/2024/03/Behavior.webp 2409w, /blog/wp-content/uploads/2024/03/Behavior-300x154.webp 300w, /blog/wp-content/uploads/2024/03/Behavior-1024x525.webp 1024w, /blog/wp-content/uploads/2024/03/Behavior-768x394.webp 768w, /blog/wp-content/uploads/2024/03/Behavior-1536x788.webp 1536w, /blog/wp-content/uploads/2024/03/Behavior-2048x1051.webp 2048w, /blog/wp-content/uploads/2024/03/Behavior-512x263.webp 512w, /blog/wp-content/uploads/2024/03/Behavior-920x472.webp 920w, /blog/wp-content/uploads/2024/03/Behavior-1600x821.webp 1600w, /blog/wp-content/uploads/2024/03/Behavior-1920x985.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1236" src="/blog/wp-content/uploads/2024/03/Behavior.webp" alt="Thingsboard form with four fields" class="wp-image-3754" srcset="/blog/wp-content/uploads/2024/03/Behavior.webp 2409w, /blog/wp-content/uploads/2024/03/Behavior-300x154.webp 300w, /blog/wp-content/uploads/2024/03/Behavior-1024x525.webp 1024w, /blog/wp-content/uploads/2024/03/Behavior-768x394.webp 768w, /blog/wp-content/uploads/2024/03/Behavior-1536x788.webp 1536w, /blog/wp-content/uploads/2024/03/Behavior-2048x1051.webp 2048w, /blog/wp-content/uploads/2024/03/Behavior-512x263.webp 512w, /blog/wp-content/uploads/2024/03/Behavior-920x472.webp 920w, /blog/wp-content/uploads/2024/03/Behavior-1600x821.webp 1600w, /blog/wp-content/uploads/2024/03/Behavior-1920x985.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -612,7 +847,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1236" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Behavior2.webp" alt="Thingsboard form with four fields" class="wp-image-3756" srcset="/blog/wp-content/uploads/2024/03/Behavior2.webp 2409w, /blog/wp-content/uploads/2024/03/Behavior2-300x154.webp 300w, /blog/wp-content/uploads/2024/03/Behavior2-1024x525.webp 1024w, /blog/wp-content/uploads/2024/03/Behavior2-768x394.webp 768w, /blog/wp-content/uploads/2024/03/Behavior2-1536x788.webp 1536w, /blog/wp-content/uploads/2024/03/Behavior2-2048x1051.webp 2048w, /blog/wp-content/uploads/2024/03/Behavior2-512x263.webp 512w, /blog/wp-content/uploads/2024/03/Behavior2-920x472.webp 920w, /blog/wp-content/uploads/2024/03/Behavior2-1600x821.webp 1600w, /blog/wp-content/uploads/2024/03/Behavior2-1920x985.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1236" src="/blog/wp-content/uploads/2024/03/Behavior2.webp" alt="Thingsboard form with four fields" class="wp-image-3756" srcset="/blog/wp-content/uploads/2024/03/Behavior2.webp 2409w, /blog/wp-content/uploads/2024/03/Behavior2-300x154.webp 300w, /blog/wp-content/uploads/2024/03/Behavior2-1024x525.webp 1024w, /blog/wp-content/uploads/2024/03/Behavior2-768x394.webp 768w, /blog/wp-content/uploads/2024/03/Behavior2-1536x788.webp 1536w, /blog/wp-content/uploads/2024/03/Behavior2-2048x1051.webp 2048w, /blog/wp-content/uploads/2024/03/Behavior2-512x263.webp 512w, /blog/wp-content/uploads/2024/03/Behavior2-920x472.webp 920w, /blog/wp-content/uploads/2024/03/Behavior2-1600x821.webp 1600w, /blog/wp-content/uploads/2024/03/Behavior2-1920x985.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -620,7 +855,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1668" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Button-appearance.webp" alt="Thingsboard form with six fields" class="wp-image-3762" srcset="/blog/wp-content/uploads/2024/03/Button-appearance.webp 2409w, /blog/wp-content/uploads/2024/03/Button-appearance-300x208.webp 300w, /blog/wp-content/uploads/2024/03/Button-appearance-1024x709.webp 1024w, /blog/wp-content/uploads/2024/03/Button-appearance-768x532.webp 768w, /blog/wp-content/uploads/2024/03/Button-appearance-1536x1064.webp 1536w, /blog/wp-content/uploads/2024/03/Button-appearance-2048x1418.webp 2048w, /blog/wp-content/uploads/2024/03/Button-appearance-512x355.webp 512w, /blog/wp-content/uploads/2024/03/Button-appearance-920x637.webp 920w, /blog/wp-content/uploads/2024/03/Button-appearance-1600x1108.webp 1600w, /blog/wp-content/uploads/2024/03/Button-appearance-1920x1329.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1668" src="/blog/wp-content/uploads/2024/03/Button-appearance.webp" alt="Thingsboard form with six fields" class="wp-image-3762" srcset="/blog/wp-content/uploads/2024/03/Button-appearance.webp 2409w, /blog/wp-content/uploads/2024/03/Button-appearance-300x208.webp 300w, /blog/wp-content/uploads/2024/03/Button-appearance-1024x709.webp 1024w, /blog/wp-content/uploads/2024/03/Button-appearance-768x532.webp 768w, /blog/wp-content/uploads/2024/03/Button-appearance-1536x1064.webp 1536w, /blog/wp-content/uploads/2024/03/Button-appearance-2048x1418.webp 2048w, /blog/wp-content/uploads/2024/03/Button-appearance-512x355.webp 512w, /blog/wp-content/uploads/2024/03/Button-appearance-920x637.webp 920w, /blog/wp-content/uploads/2024/03/Button-appearance-1600x1108.webp 1600w, /blog/wp-content/uploads/2024/03/Button-appearance-1920x1329.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -628,7 +863,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1604" height="416" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Buttons2.webp" alt="Opened and locked locks icons" class="wp-image-3764" srcset="/blog/wp-content/uploads/2024/03/Buttons2.webp 1604w, /blog/wp-content/uploads/2024/03/Buttons2-300x78.webp 300w, /blog/wp-content/uploads/2024/03/Buttons2-1024x266.webp 1024w, /blog/wp-content/uploads/2024/03/Buttons2-768x199.webp 768w, /blog/wp-content/uploads/2024/03/Buttons2-1536x398.webp 1536w, /blog/wp-content/uploads/2024/03/Buttons2-512x133.webp 512w, /blog/wp-content/uploads/2024/03/Buttons2-920x239.webp 920w, /blog/wp-content/uploads/2024/03/Buttons2-1600x415.webp 1600w" sizes="(max-width: 1604px) 100vw, 1604px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1604" height="416" src="/blog/wp-content/uploads/2024/03/Buttons2.webp" alt="Opened and locked locks icons" class="wp-image-3764" srcset="/blog/wp-content/uploads/2024/03/Buttons2.webp 1604w, /blog/wp-content/uploads/2024/03/Buttons2-300x78.webp 300w, /blog/wp-content/uploads/2024/03/Buttons2-1024x266.webp 1024w, /blog/wp-content/uploads/2024/03/Buttons2-768x199.webp 768w, /blog/wp-content/uploads/2024/03/Buttons2-1536x398.webp 1536w, /blog/wp-content/uploads/2024/03/Buttons2-512x133.webp 512w, /blog/wp-content/uploads/2024/03/Buttons2-920x239.webp 920w, /blog/wp-content/uploads/2024/03/Buttons2-1600x415.webp 1600w" sizes="(max-width: 1604px) 100vw, 1604px" /></figure>
 
 
 
@@ -640,7 +875,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1606" height="608" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Power-button-widget.webp" alt="Grid with power buttons in on or off state" class="wp-image-3770" srcset="/blog/wp-content/uploads/2024/03/Power-button-widget.webp 1606w, /blog/wp-content/uploads/2024/03/Power-button-widget-300x114.webp 300w, /blog/wp-content/uploads/2024/03/Power-button-widget-1024x388.webp 1024w, /blog/wp-content/uploads/2024/03/Power-button-widget-768x291.webp 768w, /blog/wp-content/uploads/2024/03/Power-button-widget-1536x581.webp 1536w, /blog/wp-content/uploads/2024/03/Power-button-widget-512x194.webp 512w, /blog/wp-content/uploads/2024/03/Power-button-widget-920x348.webp 920w, /blog/wp-content/uploads/2024/03/Power-button-widget-1600x606.webp 1600w" sizes="(max-width: 1606px) 100vw, 1606px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1606" height="608" src="/blog/wp-content/uploads/2024/03/Power-button-widget.webp" alt="Grid with power buttons in on or off state" class="wp-image-3770" srcset="/blog/wp-content/uploads/2024/03/Power-button-widget.webp 1606w, /blog/wp-content/uploads/2024/03/Power-button-widget-300x114.webp 300w, /blog/wp-content/uploads/2024/03/Power-button-widget-1024x388.webp 1024w, /blog/wp-content/uploads/2024/03/Power-button-widget-768x291.webp 768w, /blog/wp-content/uploads/2024/03/Power-button-widget-1536x581.webp 1536w, /blog/wp-content/uploads/2024/03/Power-button-widget-512x194.webp 512w, /blog/wp-content/uploads/2024/03/Power-button-widget-920x348.webp 920w, /blog/wp-content/uploads/2024/03/Power-button-widget-1600x606.webp 1600w" sizes="(max-width: 1606px) 100vw, 1606px" /></figure>
 
 
 
@@ -648,7 +883,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 <div class="wp-block-image">
-<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="1606" height="1096" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Button-appearance2.webp" alt="Thingsboard form with six fields" class="wp-image-3771" srcset="/blog/wp-content/uploads/2024/03/Button-appearance2.webp 1606w, /blog/wp-content/uploads/2024/03/Button-appearance2-300x205.webp 300w, /blog/wp-content/uploads/2024/03/Button-appearance2-1024x699.webp 1024w, /blog/wp-content/uploads/2024/03/Button-appearance2-768x524.webp 768w, /blog/wp-content/uploads/2024/03/Button-appearance2-1536x1048.webp 1536w, /blog/wp-content/uploads/2024/03/Button-appearance2-512x349.webp 512w, /blog/wp-content/uploads/2024/03/Button-appearance2-920x628.webp 920w, /blog/wp-content/uploads/2024/03/Button-appearance2-1600x1092.webp 1600w" sizes="(max-width: 1606px) 100vw, 1606px" /></figure></div>
+<figure class="aligncenter size-full"><img loading="lazy" decoding="async" width="1606" height="1096" src="/blog/wp-content/uploads/2024/03/Button-appearance2.webp" alt="Thingsboard form with six fields" class="wp-image-3771" srcset="/blog/wp-content/uploads/2024/03/Button-appearance2.webp 1606w, /blog/wp-content/uploads/2024/03/Button-appearance2-300x205.webp 300w, /blog/wp-content/uploads/2024/03/Button-appearance2-1024x699.webp 1024w, /blog/wp-content/uploads/2024/03/Button-appearance2-768x524.webp 768w, /blog/wp-content/uploads/2024/03/Button-appearance2-1536x1048.webp 1536w, /blog/wp-content/uploads/2024/03/Button-appearance2-512x349.webp 512w, /blog/wp-content/uploads/2024/03/Button-appearance2-920x628.webp 920w, /blog/wp-content/uploads/2024/03/Button-appearance2-1600x1092.webp 1600w" sizes="(max-width: 1606px) 100vw, 1606px" /></figure></div>
 
 
 <p style="font-size:16px">The Power button widget enables remote control of devices across sectors: turning smart home appliances on/off, managing industrial equipment, controlling servers, adjusting energy sources, operating irrigation systems, managing healthcare devices, retail displays, and public lighting, showcasing its versatility in simplifying power management in IoT applications.</p>
@@ -678,7 +913,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 		<dc:creator><![CDATA[Iryna Kheroim]]></dc:creator>
 		<pubDate>Mon, 04 Mar 2024 11:02:41 +0000</pubDate>
 				<category><![CDATA[Tech]]></category>
-		<guid isPermaLink="false">http://wp.thingsboard.io/?p=3147</guid>
+		<guid isPermaLink="false">/blog/?p=3147</guid>
 
 					<description><![CDATA[Introduction&#160; Equipment in production plays an important role in achieving maximum efficiency, quality, and payback. The issues that&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -742,7 +977,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1515" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-production-output.webp" alt="Chrat which shows Production Output" class="wp-image-3773" srcset="/blog/wp-content/uploads/2024/03/Eu-production-output.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-production-output-300x189.webp 300w, /blog/wp-content/uploads/2024/03/Eu-production-output-1024x644.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-production-output-768x483.webp 768w, /blog/wp-content/uploads/2024/03/Eu-production-output-1536x966.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-production-output-2048x1288.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-production-output-512x322.webp 512w, /blog/wp-content/uploads/2024/03/Eu-production-output-920x579.webp 920w, /blog/wp-content/uploads/2024/03/Eu-production-output-1600x1006.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-production-output-1920x1207.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1515" src="/blog/wp-content/uploads/2024/03/Eu-production-output.webp" alt="Chrat which shows Production Output" class="wp-image-3773" srcset="/blog/wp-content/uploads/2024/03/Eu-production-output.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-production-output-300x189.webp 300w, /blog/wp-content/uploads/2024/03/Eu-production-output-1024x644.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-production-output-768x483.webp 768w, /blog/wp-content/uploads/2024/03/Eu-production-output-1536x966.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-production-output-2048x1288.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-production-output-512x322.webp 512w, /blog/wp-content/uploads/2024/03/Eu-production-output-920x579.webp 920w, /blog/wp-content/uploads/2024/03/Eu-production-output-1600x1006.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-production-output-1920x1207.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -752,7 +987,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1485" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate.webp" alt="Block with percentage statistics and small chart" class="wp-image-3776" srcset="/blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-300x185.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1024x631.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-768x473.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1536x947.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-2048x1262.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-512x316.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-920x567.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1600x986.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1920x1184.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1485" src="/blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate.webp" alt="Block with percentage statistics and small chart" class="wp-image-3776" srcset="/blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-300x185.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1024x631.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-768x473.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1536x947.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-2048x1262.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-512x316.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-920x567.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1600x986.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Equipment-Utilization-Rate-1920x1184.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -762,7 +997,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="638" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1024x638.webp" alt="Grid which shows percentage of defects " class="wp-image-3777" srcset="/blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1024x638.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-300x187.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-768x478.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1536x956.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-2048x1275.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-512x319.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-920x573.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1600x996.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1920x1196.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="638" src="/blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1024x638.webp" alt="Grid which shows percentage of defects " class="wp-image-3777" srcset="/blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1024x638.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-300x187.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-768x478.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1536x956.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-2048x1275.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-512x319.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-920x573.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1600x996.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects-1920x1196.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-Precentage-of-Defects.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -776,7 +1011,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1791" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-Throughput.webp" alt="Statistics with date and execution time about production lines" class="wp-image-3778" srcset="/blog/wp-content/uploads/2024/03/Eu-Throughput.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-Throughput-300x223.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1024x761.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Throughput-768x571.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1536x1142.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Throughput-2048x1523.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Throughput-512x381.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Throughput-920x684.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1600x1190.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1920x1427.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2409" height="1791" src="/blog/wp-content/uploads/2024/03/Eu-Throughput.webp" alt="Statistics with date and execution time about production lines" class="wp-image-3778" srcset="/blog/wp-content/uploads/2024/03/Eu-Throughput.webp 2409w, /blog/wp-content/uploads/2024/03/Eu-Throughput-300x223.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1024x761.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Throughput-768x571.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1536x1142.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Throughput-2048x1523.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Throughput-512x381.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Throughput-920x684.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1600x1190.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Throughput-1920x1427.webp 1920w" sizes="(max-width: 2409px) 100vw, 2409px" /></figure>
 
 
 
@@ -786,7 +1021,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="641" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1024x641.webp" alt="Grid which shows how long the equipment is actively used during a defined period" class="wp-image-3779" srcset="/blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1024x641.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-300x188.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-768x481.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1536x962.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-2048x1283.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-512x321.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-920x576.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1600x1002.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1920x1203.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="641" src="/blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1024x641.webp" alt="Grid which shows how long the equipment is actively used during a defined period" class="wp-image-3779" srcset="/blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1024x641.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-300x188.webp 300w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-768x481.webp 768w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1536x962.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-2048x1283.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-512x321.webp 512w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-920x576.webp 920w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1600x1002.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement-1920x1203.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-Time-Based-Measurement.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -806,7 +1041,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 <div class="wp-block-columns is-layout-flex wp-container-core-columns-layout-1 wp-block-columns-is-layout-flex">
 <div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow" style="flex-basis:100%">
-<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="639" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Eu-MTTR-1-1024x639.webp" alt="Block with percentage statistics and small chart" class="wp-image-3780" srcset="/blog/wp-content/uploads/2024/03/Eu-MTTR-1-1024x639.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-300x187.webp 300w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-768x479.webp 768w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1536x958.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-2048x1278.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-512x319.webp 512w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-920x574.webp 920w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1600x998.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1920x1198.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="639" src="/blog/wp-content/uploads/2024/03/Eu-MTTR-1-1024x639.webp" alt="Block with percentage statistics and small chart" class="wp-image-3780" srcset="/blog/wp-content/uploads/2024/03/Eu-MTTR-1-1024x639.webp 1024w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-300x187.webp 300w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-768x479.webp 768w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1536x958.webp 1536w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-2048x1278.webp 2048w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-512x319.webp 512w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-920x574.webp 920w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1600x998.webp 1600w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1-1920x1198.webp 1920w, /blog/wp-content/uploads/2024/03/Eu-MTTR-1.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 </div>
 </div>
 
@@ -878,7 +1113,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 		<dc:creator><![CDATA[Andrew Shvaika]]></dc:creator>
 		<pubDate>Thu, 29 Feb 2024 11:52:07 +0000</pubDate>
 				<category><![CDATA[Tech]]></category>
-		<guid isPermaLink="false">http://wp.thingsboard.io/?p=2971</guid>
+		<guid isPermaLink="false">/blog/?p=2971</guid>
 
 					<description><![CDATA[At ThingsBoard, we&#8217;ve always been committed to enhancing user experience and system performance. Our latest update, version 3.6.2,&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -902,7 +1137,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1604" height="902" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/9.webp" alt="Thingsboard image gallery with created time and resolution information" class="wp-image-3704" srcset="/blog/wp-content/uploads/2024/03/9.webp 1604w, /blog/wp-content/uploads/2024/03/9-300x169.webp 300w, /blog/wp-content/uploads/2024/03/9-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/9-768x432.webp 768w, /blog/wp-content/uploads/2024/03/9-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/9-512x288.webp 512w, /blog/wp-content/uploads/2024/03/9-920x517.webp 920w, /blog/wp-content/uploads/2024/03/9-1600x900.webp 1600w" sizes="(max-width: 1604px) 100vw, 1604px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="1604" height="902" src="/blog/wp-content/uploads/2024/03/9.webp" alt="Thingsboard image gallery with created time and resolution information" class="wp-image-3704" srcset="/blog/wp-content/uploads/2024/03/9.webp 1604w, /blog/wp-content/uploads/2024/03/9-300x169.webp 300w, /blog/wp-content/uploads/2024/03/9-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/9-768x432.webp 768w, /blog/wp-content/uploads/2024/03/9-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/9-512x288.webp 512w, /blog/wp-content/uploads/2024/03/9-920x517.webp 920w, /blog/wp-content/uploads/2024/03/9-1600x900.webp 1600w" sizes="(max-width: 1604px) 100vw, 1604px" /></figure>
 
 
 
@@ -930,7 +1165,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1353" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Edit-image.webp" alt="Thingsboard edit image form with option to change name and loaded photo" class="wp-image-3708" srcset="/blog/wp-content/uploads/2024/03/Edit-image.webp 2406w, /blog/wp-content/uploads/2024/03/Edit-image-300x169.webp 300w, /blog/wp-content/uploads/2024/03/Edit-image-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-image-768x432.webp 768w, /blog/wp-content/uploads/2024/03/Edit-image-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-image-2048x1152.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-image-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Edit-image-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Edit-image-1600x900.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-image-1920x1080.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1353" src="/blog/wp-content/uploads/2024/03/Edit-image.webp" alt="Thingsboard edit image form with option to change name and loaded photo" class="wp-image-3708" srcset="/blog/wp-content/uploads/2024/03/Edit-image.webp 2406w, /blog/wp-content/uploads/2024/03/Edit-image-300x169.webp 300w, /blog/wp-content/uploads/2024/03/Edit-image-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/Edit-image-768x432.webp 768w, /blog/wp-content/uploads/2024/03/Edit-image-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/Edit-image-2048x1152.webp 2048w, /blog/wp-content/uploads/2024/03/Edit-image-512x288.webp 512w, /blog/wp-content/uploads/2024/03/Edit-image-920x517.webp 920w, /blog/wp-content/uploads/2024/03/Edit-image-1600x900.webp 1600w, /blog/wp-content/uploads/2024/03/Edit-image-1920x1080.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
 
 
 
@@ -978,7 +1213,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1446" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/Embed-image-1.webp" alt="Two blocks with text and code blocks with capabilities to copy code" class="wp-image-3886" srcset="/blog/wp-content/uploads/2024/03/Embed-image-1.webp 2406w, /blog/wp-content/uploads/2024/03/Embed-image-1-300x180.webp 300w, /blog/wp-content/uploads/2024/03/Embed-image-1-1024x615.webp 1024w, /blog/wp-content/uploads/2024/03/Embed-image-1-768x462.webp 768w, /blog/wp-content/uploads/2024/03/Embed-image-1-1536x923.webp 1536w, /blog/wp-content/uploads/2024/03/Embed-image-1-2048x1231.webp 2048w, /blog/wp-content/uploads/2024/03/Embed-image-1-512x308.webp 512w, /blog/wp-content/uploads/2024/03/Embed-image-1-920x553.webp 920w, /blog/wp-content/uploads/2024/03/Embed-image-1-1600x962.webp 1600w, /blog/wp-content/uploads/2024/03/Embed-image-1-1920x1154.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1446" src="/blog/wp-content/uploads/2024/03/Embed-image-1.webp" alt="Two blocks with text and code blocks with capabilities to copy code" class="wp-image-3886" srcset="/blog/wp-content/uploads/2024/03/Embed-image-1.webp 2406w, /blog/wp-content/uploads/2024/03/Embed-image-1-300x180.webp 300w, /blog/wp-content/uploads/2024/03/Embed-image-1-1024x615.webp 1024w, /blog/wp-content/uploads/2024/03/Embed-image-1-768x462.webp 768w, /blog/wp-content/uploads/2024/03/Embed-image-1-1536x923.webp 1536w, /blog/wp-content/uploads/2024/03/Embed-image-1-2048x1231.webp 2048w, /blog/wp-content/uploads/2024/03/Embed-image-1-512x308.webp 512w, /blog/wp-content/uploads/2024/03/Embed-image-1-920x553.webp 920w, /blog/wp-content/uploads/2024/03/Embed-image-1-1600x962.webp 1600w, /blog/wp-content/uploads/2024/03/Embed-image-1-1920x1154.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
 
 
 
@@ -990,7 +1225,7 @@ at the same time" class="wp-image-3733" srcset="/blog/wp-content/uploads/2024/03
 
 
 
-<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1353" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/ThingsBoard.webp" alt="Demonstration photo of relations between Client and Server" class="wp-image-3713" srcset="/blog/wp-content/uploads/2024/03/ThingsBoard.webp 2406w, /blog/wp-content/uploads/2024/03/ThingsBoard-300x169.webp 300w, /blog/wp-content/uploads/2024/03/ThingsBoard-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/ThingsBoard-768x432.webp 768w, /blog/wp-content/uploads/2024/03/ThingsBoard-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/ThingsBoard-2048x1152.webp 2048w, /blog/wp-content/uploads/2024/03/ThingsBoard-512x288.webp 512w, /blog/wp-content/uploads/2024/03/ThingsBoard-920x517.webp 920w, /blog/wp-content/uploads/2024/03/ThingsBoard-1600x900.webp 1600w, /blog/wp-content/uploads/2024/03/ThingsBoard-1920x1080.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="2406" height="1353" src="/blog/wp-content/uploads/2024/03/ThingsBoard.webp" alt="Demonstration photo of relations between Client and Server" class="wp-image-3713" srcset="/blog/wp-content/uploads/2024/03/ThingsBoard.webp 2406w, /blog/wp-content/uploads/2024/03/ThingsBoard-300x169.webp 300w, /blog/wp-content/uploads/2024/03/ThingsBoard-1024x576.webp 1024w, /blog/wp-content/uploads/2024/03/ThingsBoard-768x432.webp 768w, /blog/wp-content/uploads/2024/03/ThingsBoard-1536x864.webp 1536w, /blog/wp-content/uploads/2024/03/ThingsBoard-2048x1152.webp 2048w, /blog/wp-content/uploads/2024/03/ThingsBoard-512x288.webp 512w, /blog/wp-content/uploads/2024/03/ThingsBoard-920x517.webp 920w, /blog/wp-content/uploads/2024/03/ThingsBoard-1600x900.webp 1600w, /blog/wp-content/uploads/2024/03/ThingsBoard-1920x1080.webp 1920w" sizes="(max-width: 2406px) 100vw, 2406px" /></figure>
 
 
 

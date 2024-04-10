@@ -12,14 +12,249 @@
 	<atom:link href="/blog/author/dlandiak/feed/" rel="self" type="application/rss+xml" />
 	<link>/blog/</link>
 	<description></description>
-	<lastBuildDate>Fri, 05 Apr 2024 12:13:22 +0000</lastBuildDate>
+	<lastBuildDate>Tue, 09 Apr 2024 14:14:52 +0000</lastBuildDate>
 	<language>en-US</language>
 	<sy:updatePeriod>
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.4.3</generator>
+	<generator>https://wordpress.org/?v=6.4.4</generator>
 	<item>
+		<title>TBMQ &#8211; Scalable, Fault-tolerant, and Efficient Open-Source MQTT Broker</title>
+		<link>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/</link>
+					<comments>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/#respond</comments>
+		
+		<dc:creator><![CDATA[Dima Landiak]]></dc:creator>
+		<pubDate>Tue, 09 Apr 2024 13:55:08 +0000</pubDate>
+				<category><![CDATA[Tech]]></category>
+		<category><![CDATA[Updates]]></category>
+		<guid isPermaLink="false">/blog/?p=4138</guid>
+
+					<description><![CDATA[TBMQ is an open-source MQTT broker that is designed with great care to implement the following attributes: Motivation&#8230;]]></description>
+										<content:encoded><![CDATA[
+<p>TBMQ is an open-source MQTT broker that is designed with great care to implement the following attributes:</p>
+
+
+
+<ul>
+<li><strong>Scalability</strong>: it is a horizontally scalable platform constructed using cutting-edge open-source technologies;</li>
+
+
+
+<li><strong>Fault tolerance</strong>: no single point of failure; each broker (node) within the cluster is identical in terms of functionality;</li>
+
+
+
+<li><strong>Robustness and efficiency</strong>: can manage millions of clients and process millions of messages per second;</li>
+
+
+
+<li><strong>Durability</strong>: provides high message durability, ensuring that data is never lost.</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img fetchpriority="high" decoding="async" width="1024" height="403" src="/blog/wp-content/uploads/2024/04/tbmq-architecture-1024x403.png" alt="" class="wp-image-4140" srcset="/blog/wp-content/uploads/2024/04/tbmq-architecture-1024x403.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-architecture-300x118.png 300w, /blog/wp-content/uploads/2024/04/tbmq-architecture-768x302.png 768w, /blog/wp-content/uploads/2024/04/tbmq-architecture-1536x605.png 1536w, /blog/wp-content/uploads/2024/04/tbmq-architecture-512x202.png 512w, /blog/wp-content/uploads/2024/04/tbmq-architecture-920x362.png 920w, /blog/wp-content/uploads/2024/04/tbmq-architecture-1600x630.png 1600w, /blog/wp-content/uploads/2024/04/tbmq-architecture.png 1864w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h3 class="wp-block-heading">Motivation</h3>
+
+
+
+<p>At ThingsBoard, we&#8217;ve gained a lot of experience in building scalable IoT applications, which has helped us identify two main scenarios for MQTT-based solutions. In the first scenario, numerous devices generate a large volume of messages that are consumed by specific applications, resulting in a fan-in pattern. Normally, a few applications are set up to handle these lots of incoming data. They must be persistent clients with a Quality of Service (QoS) level set to 1 or 2, capable of retaining all the data even when they&#8217;re temporarily offline due to restarts or upgrades. This ensures applications don&#8217;t miss any single message. On the other hand, the second scenario involves numerous devices subscribing to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high volume of outgoing data. This case is known as a fan-out pattern. Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for both.</p>
+
+
+
+<p>Our design principles focused on ensuring the broker’s fault tolerance and high availability. Thus, we deliberately avoided reliance on master or coordinated processes. We ensured the same functionality across all nodes within the cluster.</p>
+
+
+
+<p>We prioritized supporting distributed processing, allowing for effortless horizontal scalability as our operations grow. We wanted our broker to support high-throughput and guarantee low-latency delivery of messages to clients. Ensuring data durability and replication was crucial in our design. We aimed for a system where once the broker acknowledges receiving a message, it remains safe and won’t be lost.</p>
+
+
+
+<p>To ensure the fulfillment of the above requirements and prevent message loss in the case of clients or some of the broker instances failures, TBMQ uses the powerful capabilities of&nbsp;<a href="https://kafka.apache.org/">Kafka</a>&nbsp;as its underlying infrastructure.</p>
+
+
+
+<h3 class="wp-block-heading">How does TBMQ work in a nutshell?</h3>
+
+
+
+<p>Kafka plays a crucial role in various stages of the MQTT message processing. All unprocessed published messages, client sessions, and subscriptions are stored within dedicated Kafka topics. A comprehensive list of Kafka topics used within TBMQ is available&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#kafka-topics">here</a>. All broker nodes can readily access the most up-to-date states of client sessions and subscriptions by utilizing these topics. They maintain local copies of sessions and subscriptions for efficient message processing and delivery. When a client loses connection to a specific broker node, other nodes can seamlessly continue operations based on the latest state. Additionally, newly added broker nodes to the cluster get this vital information upon their activation.</p>
+
+
+
+<p>Client subscriptions hold significant importance within the MQTT publish/subscribe pattern. TBMQ employs the&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#subscriptions-trie">Trie</a>&nbsp;data structure to optimize performance, enabling efficient persistence of client subscriptions in memory and facilitating swift access to relevant topic patterns.</p>
+
+
+
+<p>Upon a publisher client sending a&nbsp;<em>PUBLISH</em>&nbsp;message, it is stored in the initial Kafka topic,&nbsp;<strong>tbmq.msg.all</strong>. Once Kafka acknowledges the message’s persistence, the broker promptly responds to the publisher with either a&nbsp;<em>PUBACK</em>/<em>PUBREC</em>&nbsp;message or no response at all, depending on the chosen QoS level.</p>
+
+
+
+<p>Subsequently, separate threads, functioning as Kafka consumers, retrieve messages from the mentioned Kafka topic and utilize the Subscription Trie data structure to identify the intended recipients. Depending on the client type (<strong><em>DEVICE</em></strong>&nbsp;or&nbsp;<strong><em>APPLICATION</em></strong>) and the persistence options described below, the broker either redirects the message to another specific Kafka topic or directly delivers it to the recipient.</p>
+
+
+
+<h4 class="wp-block-heading">Non-persistent client</h4>
+
+
+
+<p>A client is classified as a non-persistent one when the following conditions are met in the&nbsp;<em>CONNECT</em>&nbsp;packet:</p>
+
+
+
+<p>For&nbsp;<strong>MQTT v3.x</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_session</code>&nbsp;flag is set to&nbsp;<em>true</em>.</li>
+</ul>
+
+
+
+<p>For&nbsp;<strong>MQTT v5</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_start</code>&nbsp;flag is set to&nbsp;<em>true</em>&nbsp;and&nbsp;<code>sessionExpiryInterval</code>&nbsp;is set to&nbsp;<em>0</em>&nbsp;or not specified.</li>
+</ul>
+
+
+
+<p>In the case of non-persistent clients, all messages intended for them are published directly without undergoing additional persistence. It is important to note that non-persistent clients can only be of type Device.</p>
+
+
+
+<figure class="wp-block-image size-large is-resized"><img decoding="async" width="1024" height="355" src="/blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-1024x355.png" alt="" class="wp-image-4143" style="width:800px;height:auto" srcset="/blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-1024x355.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-300x104.png 300w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-768x266.png 768w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-512x177.png 512w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev-920x319.png 920w, /blog/wp-content/uploads/2024/04/tbmq-non-persistent-dev.png 1190w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">Persistent client</h4>
+
+
+
+<p>MQTT clients that do not meet the non-persistent conditions mentioned above are categorized as persistent clients. Let’s delve into the conditions for persistent clients:</p>
+
+
+
+<p>For&nbsp;<strong>MQTT v3.x</strong>:</p>
+
+
+
+<ul>
+<li><code>clean_session</code>&nbsp;flag is set to&nbsp;<em>false</em>.</li>
+</ul>
+
+
+
+<p>For&nbsp;<strong>MQTT v5 clients</strong>:</p>
+
+
+
+<ul>
+<li><code>sessionExpiryInterval</code>&nbsp;is greater than&nbsp;<em>0</em>&nbsp;(regardless of the&nbsp;<code>clean_start</code>&nbsp;flag).</li>
+
+
+
+<li><code>clean_start</code>&nbsp;flag is set to&nbsp;<em>false</em>&nbsp;and&nbsp;<code>sessionExpiryInterval</code>&nbsp;is set to&nbsp;<em>0</em>&nbsp;or not specified.</li>
+</ul>
+
+
+
+<p>Building on our knowledge within the IoT ecosystem and the successful implementation of numerous IoT use cases, we have classified MQTT clients into two distinct categories:</p>
+
+
+
+<ul>
+<li>The&nbsp;<em>DEVICE</em>&nbsp;clients primarily engaged in publishing a significant volume of messages while subscribing to a limited number of topics with relatively low message rates. These clients are typically associated with IoT devices or sensors that frequently transmit data to the broker.</li>
+
+
+
+<li>The&nbsp;<em>APPLICATION</em>&nbsp;clients specialize in subscribing to topics with high message rates. They often require messages to be persisted when the client is offline with later delivery, ensuring the availability of crucial data. These clients are commonly used for real-time analytics, data processing, or other application-level functionalities.</li>
+</ul>
+
+
+
+<p>Consequently, we made a strategic decision to optimize performance by separating the processing flow for these two types of clients.</p>
+
+
+
+<h5 class="wp-block-heading">Persistent Device client</h5>
+
+
+
+<figure class="wp-block-image size-large is-resized"><img decoding="async" width="1024" height="492" src="/blog/wp-content/uploads/2024/04/tbmq-persistent-dev-1024x492.png" alt="" class="wp-image-4145" style="width:800px;height:auto" srcset="/blog/wp-content/uploads/2024/04/tbmq-persistent-dev-1024x492.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-300x144.png 300w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-768x369.png 768w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-512x246.png 512w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev-920x442.png 920w, /blog/wp-content/uploads/2024/04/tbmq-persistent-dev.png 1190w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<p>For Device persistent clients, we use the&nbsp;<strong>tbmq.msg.persisted</strong>&nbsp;Kafka topic as a means of processing published messages that are extracted from the&nbsp;<strong>tbmq.msg.all</strong>&nbsp;topic. Dedicated threads, functioning as Kafka consumers, retrieve these messages and store them in a&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/architecture/#postgresql-database">PostgreSQL</a>&nbsp;database utilized for persistence storage. This approach is particularly suitable for Device clients, as they typically do not require extensive message reception. This approach helps us recover stored messages smoothly when a client reconnects. At the same time, it ensures good performance for scenarios involving a low incoming message rate.</p>
+
+
+
+<p>We expect persistent Device clients to receive no more than 5K messages/second overall due to PostgreSQL limitations. We plan to add support for Redis to optimize persistent storage for Device clients.</p>
+
+
+
+<h5 class="wp-block-heading">Persistent Application client<a href="https://res.cloudinary.com/practicaldev/image/fetch/s--uuBU8T1C--/c_limit%2Cf_auto%2Cfl_progressive%2Cq_auto%2Cw_800/https://dev-to-uploads.s3.amazonaws.com/uploads/articles/0kwq6574pa4c0m1s5ygd.png"></a></h5>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="358" src="/blog/wp-content/uploads/2024/04/tbmq-app-1024x358.png" alt="" class="wp-image-4147" srcset="/blog/wp-content/uploads/2024/04/tbmq-app-1024x358.png 1024w, /blog/wp-content/uploads/2024/04/tbmq-app-300x105.png 300w, /blog/wp-content/uploads/2024/04/tbmq-app-768x269.png 768w, /blog/wp-content/uploads/2024/04/tbmq-app-512x179.png 512w, /blog/wp-content/uploads/2024/04/tbmq-app-920x322.png 920w, /blog/wp-content/uploads/2024/04/tbmq-app.png 1178w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<p>The number of Application clients corresponds to the number of Kafka topics used. The latest version of Kafka can handle millions of topics, making this design suitable even for the largest enterprise use cases.</p>
+
+
+
+<p>Any message read from the&nbsp;<strong>tbmq.msg.all</strong>&nbsp;topic meant for a specific Application client is then stored in the corresponding Kafka topic. A separate thread (Kafka consumer) is assigned to each Application. These threads retrieve messages from the corresponding Kafka topics and deliver them to the respective clients. This approach significantly improves performance by ensuring efficient message delivery. Additionally, the nature of the Kafka consumer group makes the&nbsp;<a href="https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/#application-client-type">MQTT 5 shared subscription</a>&nbsp;feature extremely efficient for Application clients.</p>
+
+
+
+<p>Application clients can handle a large volume of received messages, reaching millions per second.</p>
+
+
+
+<h3 class="wp-block-heading">Summary</h3>
+
+
+
+<p>In conclusion, TBMQ&#8217;s design emphasizes meeting the complex demands of IoT communication. It prioritizes scalability, fault tolerance, and efficiency, relying on Kafka for reliable message handling across various scenarios.</p>
+
+
+
+<p>By distinguishing processing strategies for Device and Application clients, TBMQ optimizes message persistence and guarantees consistent and fast message delivery.</p>
+
+
+
+<h3 class="wp-block-heading">Links</h3>
+
+
+
+<ul>
+<li><a href="https://github.com/thingsboard/tbmq">TBMQ GitHub page</a>.</li>
+
+
+
+<li><a href="https://thingsboard.io/docs/mqtt-broker/">TBMQ Website</a>.</li>
+
+
+
+<li><a href="https://thingsboard.io/docs/mqtt-broker/getting-started/">Getting Started guide</a>.</li>
+</ul>
+]]></content:encoded>
+					
+					<wfw:commentRss>/blog/tbmq-scalable-fault-tolerant-and-efficient-open-source-mqtt-broker/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
 		<title>TBMQ 1.3.0 release: WebSocket client, advanced MQTT 5 features, and more</title>
 		<link>/blog/tbmq-1-3-0-release-websocket-client-advanced-mqtt-5-features-and-more/</link>
 					<comments>/blog/tbmq-1-3-0-release-websocket-client-advanced-mqtt-5-features-and-more/#respond</comments>
@@ -27,7 +262,7 @@
 		<dc:creator><![CDATA[Dima Landiak]]></dc:creator>
 		<pubDate>Tue, 02 Apr 2024 08:48:23 +0000</pubDate>
 				<category><![CDATA[Updates]]></category>
-		<guid isPermaLink="false">https://wp.thingsboard.io/?p=3965</guid>
+		<guid isPermaLink="false">/blog/?p=3965</guid>
 
 					<description><![CDATA[We&#8217;re delighted to introduce TBMQ version 1.3.0! This update improves MQTT over WebSocket functionality by introducing a new&#8230;]]></description>
 										<content:encoded><![CDATA[
@@ -39,7 +274,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img fetchpriority="high" decoding="async" width="1024" height="713" src="https://wp.thingsboard.io/wp-content/uploads/2024/04/table-1024x713.webp" alt="" class="wp-image-4030" srcset="/blog/wp-content/uploads/2024/04/table-1024x713.webp 1024w, /blog/wp-content/uploads/2024/04/table-300x209.webp 300w, /blog/wp-content/uploads/2024/04/table-768x535.webp 768w, /blog/wp-content/uploads/2024/04/table-1536x1069.webp 1536w, /blog/wp-content/uploads/2024/04/table-512x356.webp 512w, /blog/wp-content/uploads/2024/04/table-920x640.webp 920w, /blog/wp-content/uploads/2024/04/table-1600x1114.webp 1600w, /blog/wp-content/uploads/2024/04/table.webp 1606w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="713" src="/blog/wp-content/uploads/2024/04/table-1024x713.webp" alt="" class="wp-image-4030" srcset="/blog/wp-content/uploads/2024/04/table-1024x713.webp 1024w, /blog/wp-content/uploads/2024/04/table-300x209.webp 300w, /blog/wp-content/uploads/2024/04/table-768x535.webp 768w, /blog/wp-content/uploads/2024/04/table-1536x1069.webp 1536w, /blog/wp-content/uploads/2024/04/table-512x356.webp 512w, /blog/wp-content/uploads/2024/04/table-920x640.webp 920w, /blog/wp-content/uploads/2024/04/table-1600x1114.webp 1600w, /blog/wp-content/uploads/2024/04/table.webp 1606w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -73,7 +308,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img decoding="async" width="1024" height="365" src="https://wp.thingsboard.io/wp-content/uploads/2024/04/flow-control2-2-1024x365.png" alt="" class="wp-image-4028" srcset="/blog/wp-content/uploads/2024/04/flow-control2-2-1024x365.png 1024w, /blog/wp-content/uploads/2024/04/flow-control2-2-300x107.png 300w, /blog/wp-content/uploads/2024/04/flow-control2-2-768x274.png 768w, /blog/wp-content/uploads/2024/04/flow-control2-2-1536x547.png 1536w, /blog/wp-content/uploads/2024/04/flow-control2-2-2048x729.png 2048w, /blog/wp-content/uploads/2024/04/flow-control2-2-512x182.png 512w, /blog/wp-content/uploads/2024/04/flow-control2-2-920x328.png 920w, /blog/wp-content/uploads/2024/04/flow-control2-2-1600x570.png 1600w, /blog/wp-content/uploads/2024/04/flow-control2-2-3200x1140.png 3200w, /blog/wp-content/uploads/2024/04/flow-control2-2-1920x684.png 1920w, /blog/wp-content/uploads/2024/04/flow-control2-2.png 3212w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="365" src="/blog/wp-content/uploads/2024/04/flow-control2-2-1024x365.png" alt="" class="wp-image-4028" srcset="/blog/wp-content/uploads/2024/04/flow-control2-2-1024x365.png 1024w, /blog/wp-content/uploads/2024/04/flow-control2-2-300x107.png 300w, /blog/wp-content/uploads/2024/04/flow-control2-2-768x274.png 768w, /blog/wp-content/uploads/2024/04/flow-control2-2-1536x547.png 1536w, /blog/wp-content/uploads/2024/04/flow-control2-2-2048x729.png 2048w, /blog/wp-content/uploads/2024/04/flow-control2-2-512x182.png 512w, /blog/wp-content/uploads/2024/04/flow-control2-2-920x328.png 920w, /blog/wp-content/uploads/2024/04/flow-control2-2-1600x570.png 1600w, /blog/wp-content/uploads/2024/04/flow-control2-2-3200x1140.png 3200w, /blog/wp-content/uploads/2024/04/flow-control2-2-1920x684.png 1920w, /blog/wp-content/uploads/2024/04/flow-control2-2.png 3212w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 
@@ -111,7 +346,7 @@
 
 
 
-<figure class="wp-block-image size-large"><img decoding="async" width="1024" height="428" src="https://wp.thingsboard.io/wp-content/uploads/2024/04/request-response2-1024x428.png" alt="" class="wp-image-4029" srcset="/blog/wp-content/uploads/2024/04/request-response2-1024x428.png 1024w, /blog/wp-content/uploads/2024/04/request-response2-300x126.png 300w, /blog/wp-content/uploads/2024/04/request-response2-768x321.png 768w, /blog/wp-content/uploads/2024/04/request-response2-1536x643.png 1536w, /blog/wp-content/uploads/2024/04/request-response2-2048x857.png 2048w, /blog/wp-content/uploads/2024/04/request-response2-512x214.png 512w, /blog/wp-content/uploads/2024/04/request-response2-920x385.png 920w, /blog/wp-content/uploads/2024/04/request-response2-1600x669.png 1600w, /blog/wp-content/uploads/2024/04/request-response2-3200x1339.png 3200w, /blog/wp-content/uploads/2024/04/request-response2-1920x803.png 1920w, /blog/wp-content/uploads/2024/04/request-response2.png 3212w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="428" src="/blog/wp-content/uploads/2024/04/request-response2-1024x428.png" alt="" class="wp-image-4029" srcset="/blog/wp-content/uploads/2024/04/request-response2-1024x428.png 1024w, /blog/wp-content/uploads/2024/04/request-response2-300x126.png 300w, /blog/wp-content/uploads/2024/04/request-response2-768x321.png 768w, /blog/wp-content/uploads/2024/04/request-response2-1536x643.png 1536w, /blog/wp-content/uploads/2024/04/request-response2-2048x857.png 2048w, /blog/wp-content/uploads/2024/04/request-response2-512x214.png 512w, /blog/wp-content/uploads/2024/04/request-response2-920x385.png 920w, /blog/wp-content/uploads/2024/04/request-response2-1600x669.png 1600w, /blog/wp-content/uploads/2024/04/request-response2-3200x1339.png 3200w, /blog/wp-content/uploads/2024/04/request-response2-1920x803.png 1920w, /blog/wp-content/uploads/2024/04/request-response2.png 3212w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
 
 
 

@@ -12,14 +12,274 @@
 	<atom:link href="/blog/category/solutions/feed/" rel="self" type="application/rss+xml" />
 	<link>/blog/</link>
 	<description></description>
-	<lastBuildDate>Fri, 05 Apr 2024 12:56:51 +0000</lastBuildDate>
+	<lastBuildDate>Wed, 10 Apr 2024 08:00:07 +0000</lastBuildDate>
 	<language>en-US</language>
 	<sy:updatePeriod>
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.4.3</generator>
+	<generator>https://wordpress.org/?v=6.4.4</generator>
 	<item>
+		<title>Building a Smart Parking Mobile App with ThingsBoard and Stripe Integration</title>
+		<link>/blog/building-a-smart-parking-mobile-app-with-thingsboard-and-stripe-integration/</link>
+					<comments>/blog/building-a-smart-parking-mobile-app-with-thingsboard-and-stripe-integration/#respond</comments>
+		
+		<dc:creator><![CDATA[Valeriia Koriavikova]]></dc:creator>
+		<pubDate>Mon, 08 Apr 2024 10:12:45 +0000</pubDate>
+				<category><![CDATA[Solutions]]></category>
+		<guid isPermaLink="false">/blog/?p=4069</guid>
+
+					<description><![CDATA[In today&#8217;s fast-paced world, the convenience of smart parking solutions can&#8217;t be overstated. In this article, we’ll delve&#8230;]]></description>
+										<content:encoded><![CDATA[
+<p style="font-size:16px">In today&#8217;s fast-paced world, the convenience of smart parking solutions can&#8217;t be overstated. In this article, we’ll delve into the process of building a user-friendly Mobile Parking application using ThingsBoard, an IoT platform, and integrating it with Stripe for seamless online payments.</p>
+
+
+
+<h4 class="wp-block-heading">Concept Overview</h4>
+
+
+
+<p style="font-size:16px">The mobile app aims to simplify the parking experience. It allows users to find available parking spots, start and end parking sessions, and handle payments &#8211; all without leaving their cars. Key features include real-time parking availability, cost information, parking history, and the ability to delay payment with a reminder system.</p>
+
+
+
+<figure class="wp-block-image size-large"><img fetchpriority="high" decoding="async" width="1024" height="363" src="/blog/wp-content/uploads/2024/04/scheme-parking-1024x363.png" alt="" class="wp-image-4109" srcset="/blog/wp-content/uploads/2024/04/scheme-parking-1024x363.png 1024w, /blog/wp-content/uploads/2024/04/scheme-parking-300x106.png 300w, /blog/wp-content/uploads/2024/04/scheme-parking-768x273.png 768w, /blog/wp-content/uploads/2024/04/scheme-parking-1536x545.png 1536w, /blog/wp-content/uploads/2024/04/scheme-parking-2048x727.png 2048w, /blog/wp-content/uploads/2024/04/scheme-parking-512x182.png 512w, /blog/wp-content/uploads/2024/04/scheme-parking-920x327.png 920w, /blog/wp-content/uploads/2024/04/scheme-parking-1600x568.png 1600w, /blog/wp-content/uploads/2024/04/scheme-parking-3200x1136.png 3200w, /blog/wp-content/uploads/2024/04/scheme-parking-1920x681.png 1920w, /blog/wp-content/uploads/2024/04/scheme-parking.png 3212w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">Stripe Integration</h4>
+
+
+
+<p style="font-size:16px">We chose Stripe as our payment system because of its robust features and ease of integration. While Stripe serves as an example, the principles outlined can apply to other payment systems, depending on your specific needs.</p>
+
+
+
+<p style="font-size:16px">Firstly, you need to create an account on Stripe. Then, on the ThingsBoard side, implement a custom endpoint to generate payment links. Once the parking price is calculated, use the specific methods provided by the Stripe extension in Java to create a payment on Stripe. Then, get a link from the created payment to forward the end user to the payment page.</p>
+
+
+
+<p style="font-size:16px">After that, create another custom endpoint for payment confirmation on the ThingsBoard side and integrate this endpoint with the Stripe as a webhook. Once the end user enters payment details and clicks the pay button, Stripe will trigger ThingsBoard to update the payment status as confirmed or failed.</p>
+
+
+
+<h4 class="wp-block-heading">User Capabilities</h4>
+
+
+
+<p style="font-size:16px">With this app, users can:</p>
+
+
+
+<ul>
+<li style="font-size:16px">Locate their position and nearby available parking spots</li>
+
+
+
+<li style="font-size:16px">Start and end parking sessions</li>
+
+
+
+<li style="font-size:16px">View and pay parking charges, either immediately or later</li>
+
+
+
+<li style="font-size:16px">Receive notifications for unpaid parking charges</li>
+
+
+
+<li style="font-size:16px">Track and analyze their parking history and expenses</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img decoding="async" width="1024" height="550" src="/blog/wp-content/uploads/2024/04/User-Capabilities3-1024x550.webp" alt="" class="wp-image-4154" srcset="/blog/wp-content/uploads/2024/04/User-Capabilities3-1024x550.webp 1024w, /blog/wp-content/uploads/2024/04/User-Capabilities3-300x161.webp 300w, /blog/wp-content/uploads/2024/04/User-Capabilities3-768x412.webp 768w, /blog/wp-content/uploads/2024/04/User-Capabilities3-1536x824.webp 1536w, /blog/wp-content/uploads/2024/04/User-Capabilities3-2048x1099.webp 2048w, /blog/wp-content/uploads/2024/04/User-Capabilities3-512x275.webp 512w, /blog/wp-content/uploads/2024/04/User-Capabilities3-920x494.webp 920w, /blog/wp-content/uploads/2024/04/User-Capabilities3-1600x859.webp 1600w, /blog/wp-content/uploads/2024/04/User-Capabilities3-1920x1031.webp 1920w, /blog/wp-content/uploads/2024/04/User-Capabilities3.webp 2409w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">System Hierarchy</h4>
+
+
+
+<p style="font-size:16px">In our solution, the hierarchy is straightforward: we have Parking spots that act as Assets and self-registered Users who will use our application for parking. </p>
+
+
+
+<p style="font-size:16px">Parking spots have geofencing zones, and colored markers on a map indicate their occupancy. </p>
+
+
+
+<p style="font-size:16px">Users will be able to see their location on the map with a car marker, ensuring that each user is represented by a car on the map.</p>
+
+
+
+<p style="font-size:16px">Payment information will be saved as JSON telemetry on both the parking spot and user entities. This information will include details about the start and end of the parking period, total cost, payment link, and payment status.</p>
+
+
+
+<p style="font-size:16px">During the parking period, an additional custom relation should be created between the parking spot and the user. This relation should be removed after successful payment for parking services.</p>
+
+
+
+<h4 class="wp-block-heading">Front-End (FE) Development</h4>
+
+
+
+<ul>
+<li style="font-size:16px">Dashboard: Create a map showing parking spots and a telemetry table for parking history.
+<ul>
+<li>Parking spots act as assets with the Asset Profile “Parking Spot”. The geofence attribute is “perimeter”, while coordinates are denoted by standard names “longitude” and “latitude”. The occupancy status of each spot will be represented by zone and marker color: red &#8211; occupied, green &#8211; free spot</li>
+
+
+
+<li>User’s parking history will be saved as telemetry data, so users will be able to trace their previous parking periods</li>
+</ul>
+</li>
+
+
+
+<li style="font-size:16px">Widgets: Configure <a href="https://thingsboard.io/docs/mobile/mobile-actions/">mobile actions</a> for map interactions and historical data review.
+<ul>
+<li>Use mobile actions to get the phone’s location that allows the user to set their current coordinates on a map, start/finish the parking period by clicking on a parking spot on the map</li>
+
+
+
+<li>Add action for checking data from the parking record</li>
+</ul>
+</li>
+
+
+
+<li style="font-size:16px">Geofences: Set up perimeters for parking lots and mark them on the map.
+<ul>
+<li>Set parking spot perimeter as geofencing polygon on a map</li>
+
+
+
+<li>Adjust the perimeter color based on spot occupancy</li>
+</ul>
+</li>
+
+
+
+<li style="font-size:16px">User Interactions: Enable the tooltip for checking parking information.
+<ul>
+<li>Tooltips on markers provide additional information about parking spots, like occupancy, price, name, etc.</li>
+</ul>
+</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img decoding="async" width="1024" height="800" src="/blog/wp-content/uploads/2024/04/actions-1-1024x800.webp" alt="" class="wp-image-4082" srcset="/blog/wp-content/uploads/2024/04/actions-1-1024x800.webp 1024w, /blog/wp-content/uploads/2024/04/actions-1-300x234.webp 300w, /blog/wp-content/uploads/2024/04/actions-1-768x600.webp 768w, /blog/wp-content/uploads/2024/04/actions-1-1536x1199.webp 1536w, /blog/wp-content/uploads/2024/04/actions-1-2048x1599.webp 2048w, /blog/wp-content/uploads/2024/04/actions-1-512x400.webp 512w, /blog/wp-content/uploads/2024/04/actions-1-920x718.webp 920w, /blog/wp-content/uploads/2024/04/actions-1-1600x1249.webp 1600w, /blog/wp-content/uploads/2024/04/actions-1-3200x2499.webp 3200w, /blog/wp-content/uploads/2024/04/actions-1-1920x1499.webp 1920w, /blog/wp-content/uploads/2024/04/actions-1-scaled.webp 2560w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">Mobile Application Development</h4>
+
+
+
+<ul>
+<li style="font-size:16px">User Authentication: Allow users to sign in or <a href="https://thingsboard.io/docs/pe/user-guide/self-registration/">sign up</a>.</li>
+
+
+
+<li style="font-size:16px">Dashboards: <a href="https://thingsboard.io/docs/pe/mobile/customize-dashboards/">Customize the mobile application</a> &#8211; set the created dashboard as a homepage</li>
+
+
+
+<li style="font-size:16px">User Features:
+<ul>
+<li>Setting the current location on a map to see the car marker</li>
+
+
+
+<li>Checking the history of parking periods on the telemetry table</li>
+
+
+
+<li>Downloading parking report from the parking history table</li>
+</ul>
+</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">Back-End (BE) Development</h4>
+
+
+
+<ul>
+<li style="font-size:16px">User Registration: Configure <a href="https://thingsboard.io/docs/paas/user-guide/self-registration/">self-registration</a> for new users. 
+<ul>
+<li>Assign the DNS record to your ThingsBoard IP address&nbsp;</li>
+
+
+
+<li>Set up a mail server</li>
+
+
+
+<li>Configure sign up form</li>
+</ul>
+</li>
+
+
+
+<li style="font-size:16px">Stripe Integration: Create a <a href="https://dashboard.stripe.com/">Stripe</a> account for integration with ThingsBoard. Verification of account is not required for this use case, and test mode can be used instead</li>
+
+
+
+<li style="font-size:16px">Create a custom endpoint to save start parking time as a JSON telemetry on both parking spot and user entities</li>
+
+
+
+<li style="font-size:16px">Create a custom endpoint to finish parking, generate a link for payment using Stripe and update parking information in the ThingsBoard</li>
+
+
+
+<li style="font-size:16px">Create a custom endpoint for payment confirmation on the ThingsBoard side, configure it, and integrate it as a webhook to Stripe</li>
+
+
+
+<li style="font-size:16px">Notifications: Establish alarm logic and notification channels for reminders and confirmations:
+<ul>
+<li>Create a new rule chain with a Generator rule node, which will propagate messages to all parking lots every 5 minutes</li>
+
+
+
+<li>Check parking spots using default Enrichment and Filter rule nodes. Create an alarm if a user has not finished paying for more than an hour</li>
+
+
+
+<li>Notify users if needed via email, SMS, etc. if necessary. You can use the ThingsBoard <a href="https://thingsboard.io/docs/paas/user-guide/notifications/">notification center</a> or directly in the rule chain using default External rule nodes</li>
+</ul>
+</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-large"><img loading="lazy" decoding="async" width="1024" height="908" src="/blog/wp-content/uploads/2024/04/actions-2-1024x908.webp" alt="" class="wp-image-4088" srcset="/blog/wp-content/uploads/2024/04/actions-2-1024x908.webp 1024w, /blog/wp-content/uploads/2024/04/actions-2-300x266.webp 300w, /blog/wp-content/uploads/2024/04/actions-2-768x681.webp 768w, /blog/wp-content/uploads/2024/04/actions-2-1536x1362.webp 1536w, /blog/wp-content/uploads/2024/04/actions-2-512x454.webp 512w, /blog/wp-content/uploads/2024/04/actions-2-920x816.webp 920w, /blog/wp-content/uploads/2024/04/actions-2-1600x1419.webp 1600w, /blog/wp-content/uploads/2024/04/actions-2.webp 1606w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<h4 class="wp-block-heading">Conclusion</h4>
+
+
+
+<p style="font-size:16px">This smart parking solution demonstrates the versatility of ThingsBoard in IoT application development and showcases how integrating a payment system like Stripe can create a seamless and user-friendly experience. While this guide provides an overview, developers can adapt and expand upon these ideas to build more complex and specially tailored IoT solutions.</p>
+
+
+
+<p style="font-size:16px">Remember, this is just a starting point. The IoT world is fast, and with ThingsBoard, your options are virtually limitless.&nbsp;</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>/blog/building-a-smart-parking-mobile-app-with-thingsboard-and-stripe-integration/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
 		<title>TOP SUPPLIER RETAIL 2024: ThingsBoard and Schwarz Group&#8217;s Award-Winning Partnership</title>
 		<link>/blog/top-supplier-retail-2024-2/</link>
 					<comments>/blog/top-supplier-retail-2024-2/#respond</comments>
@@ -29,7 +289,7 @@
 				<category><![CDATA[Company]]></category>
 		<category><![CDATA[Solutions]]></category>
 		<category><![CDATA[Use cases]]></category>
-		<guid isPermaLink="false">/blog/?p=3972</guid>
+		<guid isPermaLink="false">https://tbblog.xyz/?p=3972</guid>
 
 					<description><![CDATA[A new achievement and what does it mean to all ]]></description>
 										<content:encoded><![CDATA[
@@ -101,7 +361,7 @@
 		<dc:creator><![CDATA[PR team]]></dc:creator>
 		<pubDate>Tue, 12 Mar 2024 12:48:44 +0000</pubDate>
 				<category><![CDATA[Solutions]]></category>
-		<guid isPermaLink="false">http://wp.thingsboard.io/?p=3188</guid>
+		<guid isPermaLink="false">/blog/?p=3188</guid>
 
 					<description><![CDATA[Reliable and high-quality control of temperature and humidity with constant access to monitoring data is an important condition for the storage of thermosensitive drugs and raw materials for medicines. The ThingsBoard partner — Vypin together with our team has implemented a solution for a global pharmaceutical company. The IoT application has helped to optimize processes and costs.]]></description>
 										<content:encoded><![CDATA[
@@ -113,7 +373,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img fetchpriority="high" decoding="async" width="803" height="451" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/5.webp" alt="Working conditions on the left side and device on the right side" class="wp-image-3797" srcset="/blog/wp-content/uploads/2024/03/5.webp 803w, /blog/wp-content/uploads/2024/03/5-300x168.webp 300w, /blog/wp-content/uploads/2024/03/5-768x431.webp 768w, /blog/wp-content/uploads/2024/03/5-512x288.webp 512w" sizes="(max-width: 803px) 100vw, 803px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="803" height="451" src="/blog/wp-content/uploads/2024/03/5.webp" alt="Working conditions on the left side and device on the right side" class="wp-image-3797" srcset="/blog/wp-content/uploads/2024/03/5.webp 803w, /blog/wp-content/uploads/2024/03/5-300x168.webp 300w, /blog/wp-content/uploads/2024/03/5-768x431.webp 768w, /blog/wp-content/uploads/2024/03/5-512x288.webp 512w" sizes="(max-width: 803px) 100vw, 803px" /></figure>
 
 
 
@@ -147,7 +407,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img decoding="async" width="893" height="407" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/temp_hum_dashboard210923.webp" alt="Screen with opened dashboard and devices in front" class="wp-image-3800" srcset="/blog/wp-content/uploads/2024/03/temp_hum_dashboard210923.webp 893w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-300x137.webp 300w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-768x350.webp 768w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-512x233.webp 512w" sizes="(max-width: 893px) 100vw, 893px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="893" height="407" src="/blog/wp-content/uploads/2024/03/temp_hum_dashboard210923.webp" alt="Screen with opened dashboard and devices in front" class="wp-image-3800" srcset="/blog/wp-content/uploads/2024/03/temp_hum_dashboard210923.webp 893w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-300x137.webp 300w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-768x350.webp 768w, /blog/wp-content/uploads/2024/03/temp_hum_dashboard210923-512x233.webp 512w" sizes="(max-width: 893px) 100vw, 893px" /></figure>
 
 
 
@@ -155,7 +415,7 @@
 
 
 
-<figure class="wp-block-image size-full"><img decoding="async" width="803" height="460" src="https://wp.thingsboard.io/wp-content/uploads/2024/03/6.webp" alt="Two windows with alarms information  and dashboard" class="wp-image-3799" srcset="/blog/wp-content/uploads/2024/03/6.webp 803w, /blog/wp-content/uploads/2024/03/6-300x172.webp 300w, /blog/wp-content/uploads/2024/03/6-768x440.webp 768w, /blog/wp-content/uploads/2024/03/6-512x293.webp 512w" sizes="(max-width: 803px) 100vw, 803px" /></figure>
+<figure class="wp-block-image size-full"><img loading="lazy" decoding="async" width="803" height="460" src="/blog/wp-content/uploads/2024/03/6.webp" alt="Two windows with alarms information  and dashboard" class="wp-image-3799" srcset="/blog/wp-content/uploads/2024/03/6.webp 803w, /blog/wp-content/uploads/2024/03/6-300x172.webp 300w, /blog/wp-content/uploads/2024/03/6-768x440.webp 768w, /blog/wp-content/uploads/2024/03/6-512x293.webp 512w" sizes="(max-width: 803px) 100vw, 803px" /></figure>
 
 
 
