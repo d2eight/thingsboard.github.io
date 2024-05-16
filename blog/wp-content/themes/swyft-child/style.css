@@ -9,7 +9,7 @@
 	margin: 20px auto 0px; 
 	width: 100%;
 	padding: 0px 20px;
-	font-size: 18px;
+	font-size: 16px;
 }
 
 .cloud-link a{
@@ -56,7 +56,7 @@
 }
 
 /* image popup */
-.image-popup{
+/* .image-popup{
 	cursor: default !important;
 	border: 8px #FFF solid;
 	position: fixed;
@@ -120,7 +120,7 @@
 
 .overlay-active .overlay{
 	display: block;
-}
+} */
 
 /* 	google-search */
 .opened-search header{
@@ -4557,7 +4557,6 @@ blockquote p{
 }
 
 .wp-block-image{
-	cursor: pointer;
 	text-align: center;
 }
 
