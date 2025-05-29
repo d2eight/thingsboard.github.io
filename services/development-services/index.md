@@ -16,17 +16,19 @@ redirect_from: "docs/services/development-services/"
         </div>
         <div class="hero-image">
             <div class="image-wrapper-icon-laptop">
-                <img id="icon-laptop" src="/images/development-services/laptop-with-dashboard.webp" alt="Laptop with a dashboard"/>
+                <img id="icon-laptop" src="/images/development-services/laptop-with-dashboard.webp" alt="Laptop with a dashboard" width="1127" height="720"/>
                 <button class="button schedule anchor-button" onclick="onContactUsClick(0)">Contact Us</button>
             </div>
             <div class="image-wrapper-icon-phone">
-                <img id="icon-phone" src="/images/development-services/phone-with-dashboard.webp" alt="Phone with a dashboard"/>
+                <img id="icon-phone" src="/images/development-services/phone-with-dashboard.webp" alt="Phone with a dashboard" width="459" height="552"/>
             </div>
             <div class="schedule-block">
                 <img
                     id="progress"
                     src="/images/development-services/half-circle-progress.svg"
-                    alt="half cicrle progress icon"/>
+                    alt="half cicrle progress icon"
+                    width="272"
+                    height="151"/>
                 <span class="result-number">100%</span>
                 <span class="result-text">Fixed Price. Firm Deadlines. Proven Results.</span>
                 <button id="Serv_DevServ_ContactUs1" 
@@ -42,52 +44,52 @@ redirect_from: "docs/services/development-services/"
     <div>
         <div class="customer-logos">
             <div class="logo">
-                <img src="/images/development-services/magenta-logo.svg" alt="logo magenta"/>
+                <img src="/images/development-services/magenta-logo.svg" alt="logo magenta" width="182" height="52"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-super-bock-group.svg" alt="logo super bock group"/>
+                <img src="/images/development-services/logo-super-bock-group.svg" alt="logo super bock group" width="170" height="76"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-kalitec.svg" alt="logo kalitec"/>
+                <img src="/images/development-services/logo-kalitec.svg" alt="logo kalitec" width="200" height="50"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/suessco-logo.svg" alt="logo suessco"/>
+                <img src="/images/development-services/suessco-logo.svg" alt="logo suessco" width="252" height="44"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/oxi-logo.svg" alt="logo oxi"/>
+                <img src="/images/development-services/oxi-logo.svg" alt="logo oxi" width="122" height="44"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-iona-tech.svg" alt="logo iona tech"/>
+                <img src="/images/development-services/logo-iona-tech.svg" alt="logo iona tech" width="176" height="68"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-asg-tech.svg" alt="logo asg tech"/>
+                <img src="/images/development-services/logo-asg-tech.svg" alt="logo asg tech" width="360" height="66"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-asl.svg" alt="logo asl"/>
+                <img src="/images/development-services/logo-asl.svg" alt="logo asl" width="170" height="91"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/magenta-logo.svg" alt="logo magenta"/>
+                <img src="/images/development-services/magenta-logo.svg" alt="logo magenta" width="182" height="52"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-super-bock-group.svg" alt="logo super bock group"/>
+                <img src="/images/development-services/logo-super-bock-group.svg" alt="logo super bock group" width="170" height="76"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-kalitec.svg" alt="logo kalitec"/>
+                <img src="/images/development-services/logo-kalitec.svg" alt="logo kalitec" width="200" height="50"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/suessco-logo.svg" alt="logo suessco"/>
+                <img src="/images/development-services/suessco-logo.svg" alt="logo suessco" width="252" height="44"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/oxi-logo.svg" alt="logo oxi"/>
+                <img src="/images/development-services/oxi-logo.svg" alt="logo oxi" width="122" height="44"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-iona-tech.svg" alt="logo iona tech"/>
+                <img src="/images/development-services/logo-iona-tech.svg" alt="logo iona tech" width="176" height="68"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-asg-tech.svg" alt="logo asg tech"/>
+                <img src="/images/development-services/logo-asg-tech.svg" alt="logo asg tech" width="360" height="66"/>
             </div>
             <div class="logo">
-                <img src="/images/development-services/logo-asl.svg" alt="logo asl"/>
+                <img src="/images/development-services/logo-asl.svg" alt="logo asl" width="170" height="91"/>
             </div>
         </div>
     </div>
@@ -105,8 +107,8 @@ redirect_from: "docs/services/development-services/"
     <div id="content-poc" class="content-wrapper">
         <div class="poc">
             <div class="left-block">
-                <img id="solution-poc" src="/images/development-services/solution-mvp.webp" alt="Custom solution">
-                <img id="solution-widget-1" class="absolute-image secondary-image" src="/images/development-services/solution-widget-3.svg"  alt="Custom solution widget dark card with pie chart">
+                <img id="solution-poc" src="/images/development-services/solution-mvp.webp" alt="Custom solution" width="900" height="543">
+                <img id="solution-widget-1" class="absolute-image secondary-image" src="/images/development-services/solution-widget-3.svg"  alt="Custom solution widget dark card with pie chart" width="640" height="366">
             </div>
             <div class="right-block">
                 <div class="section-title">
@@ -120,7 +122,7 @@ redirect_from: "docs/services/development-services/"
                     <button id="Serv_DevServ_ContactUs1" class="button secondary anchor-button gtm_button" onclick="onContactUsClick(0)">Contact Us</button>
                 </ul>
             </div>
-            <img id="number-one" class="absolute-image" src="/images/development-services/number-1.svg" alt="background number one">
+            <img id="number-one" class="absolute-image" src="/images/development-services/number-1.svg" alt="background number one" width="124" height="291">
         </div>
     </div>
     <div id="content-mvp" class="content-wrapper">
@@ -138,18 +140,18 @@ redirect_from: "docs/services/development-services/"
                 </ul>
             </div>
             <div class="right-block">
-                <img id="solution-mvp1" src="/images/development-services/solution-coinify.webp" alt="Custom solution mvp">
-                <img id="solution-widget-3" class="absolute-image secondary-image" src="/images/development-services/solution-widget-1.svg" alt="Custom solution widget value card with pie chart">
-                <img id="solution-widget-2" class="absolute-image secondary-image" src="/images/development-services/solution-widget-2.svg" alt="Custom solution widget value card with graph" >
+                <img id="solution-mvp1" src="/images/development-services/solution-coinify.webp" alt="Custom solution mvp" width="902" height="532">
+                <img id="solution-widget-3" class="absolute-image secondary-image" src="/images/development-services/solution-widget-1.svg" alt="Custom solution widget value card with pie chart" width="347" height="322">
+                <img id="solution-widget-2" class="absolute-image secondary-image" src="/images/development-services/solution-widget-2.svg" alt="Custom solution widget value card with graph" width="273" height="193">
             </div>
-            <img id="number-two" class="absolute-image" src="/images/development-services/number-2.svg" alt="Background number two">
+            <img id="number-two" class="absolute-image" src="/images/development-services/number-2.svg" alt="Background number two" width="202" height="295">
         </div>
     </div>
     <div id="content-market-solution" class="content-wrapper">
         <div class="market-solution">
             <div class="left-block">
-                <img id="solution-market-solution1" src="/images/development-services/solution-market-solution.webp" alt="Custom solution market solution">
-                <img id="solution-market-solution2" class="absolute-image base-image" src="/images/development-services/solution-market-solution2.webp" alt="Custom solution market solution: dashboard with trucks">
+                <img id="solution-market-solution1" src="/images/development-services/solution-market-solution.webp" alt="Custom solution market solution" width="760" height="458">
+                <img id="solution-market-solution2" class="absolute-image base-image" src="/images/development-services/solution-market-solution2.webp" alt="Custom solution market solution: dashboard with trucks" width="760" height="458">
             </div>
             <div class="right-block">
                 <div class="section-title">
@@ -164,7 +166,7 @@ redirect_from: "docs/services/development-services/"
                     <button id="Serv_DevServ_ContactUs1" class="button secondary anchor-button gtm_button" onclick="onContactUsClick(0)">Contact Us</button>
                 </ul>
             </div>
-            <img id="number-three" class="absolute-image" src="/images/development-services/number-3.svg" alt="Background number three">
+            <img id="number-three" class="absolute-image" src="/images/development-services/number-3.svg" alt="Background number three" width="215" height="299">
         </div>
     </div>
     <div class="content-wrapper additionally">
@@ -200,7 +202,7 @@ redirect_from: "docs/services/development-services/"
 <div id="myModal" class="modal">
   <div class="modal-content">
     <div class="close-button">
-        <img class="close" src="/images/close-icon.svg" alt="Close"/>
+        <img class="close" src="/images/close-icon.svg" alt="Close" width="47" height="47"/>
     </div>
     <div class="sub-content">
         <div class="title">
