@@ -2239,7 +2239,7 @@ selfManagedPlan:
                     </div>
                     <div class="item" data-tag="h4" data-item-id="tb-cloud-white-labeling" data-title="Is white labeling available out of the box?">
                         <div class="container">
-                            <p>White labeling functionality is available starting from the Prototype subscription.</p>
+                            <p>White labeling functionality is available starting from the Pilot subscription.</p>
                         </div>
                     </div>
                     <div class="load-more" onClick="loadMoreFaq(this)">
@@ -3716,7 +3716,7 @@ selfManagedPlan:
                     </div>
                     <div class="item" data-tag="h4" data-item-id="trendz-cloud-white-labeling" data-title="Is white labeling available out of the box?">
                         <div class="container">
-                            <p>White labeling functionality is available starting from the Prototype subscription.</p>
+                            <p>White labeling functionality is available starting from the Pilot subscription.</p>
                         </div>
                     </div>
                     <div class="item" data-tag="h4" data-item-id="trendz-cloud-self-managed-support" data-title="If I don’t want to switch to the Enterprise plan but prefer to migrate to a self-managed system, what kind of support do I get?">
